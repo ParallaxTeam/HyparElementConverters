@@ -119,4 +119,8 @@
     <Content Include="UV.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if not exist "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)" mkdir "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)"
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
