@@ -49,6 +49,9 @@ namespace HyparRevitCurtainWallConverter
             var doc = revitElement.Document;
             var curtainWall = revitElement as ADSK.Wall;
 
+            //model curves to return
+            var modelCurves = new List<ModelCurve>();
+
             if (curtainWall.CurtainGrid == null)
             {
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
@@ -57,17 +60,25 @@ namespace HyparRevitCurtainWallConverter
             var uGridLines = curtainWall.CurtainGrid.GetUGridLineIds()
                 .Select(c => doc.GetElement(c) as ADSK.CurtainGridLine).ToArray();
 
-            var lines = uGridLines.Select(u =>
-                new Line(u.FullCurve.GetEndPoint(0).ToVector3(), u.FullCurve.GetEndPoint(1).ToVector3())).ToArray();
+            var vGridLines = curtainWall.CurtainGrid.GetVGridLineIds()
+                .Select(c => doc.GetElement(c) as ADSK.CurtainGridLine).ToArray();
 
-            var modelCurves = new List<ModelCurve>(); 
             foreach (var uGrid in uGridLines)
             {
                 var fullCurve = uGrid.FullCurve;
 
-               Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
+                Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-               modelCurves.Add(new ModelCurve(curve));
+                modelCurves.Add(new ModelCurve(curve));
+            }
+
+            foreach (var vGrid in vGridLines)
+            {
+                var fullCurve = vGrid.FullCurve;
+
+                Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
+
+                modelCurves.Add(new ModelCurve(curve,BuiltInMaterials.Black));
             }
 
             return modelCurves.ToArray();
