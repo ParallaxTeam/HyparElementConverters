@@ -17,10 +17,11 @@ namespace HyparRevitCurtainWallConverter
     {
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
+            //var material = new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
             var curtainWall = revitElement as Autodesk.Revit.DB.Wall;
 
             //model curves to return
-            var curtainWallMullions = new List<Mullion>();
+            var curtainWallMullions = new List<Element>();
 
             if (curtainWall.CurtainGrid == null)
             {
@@ -39,7 +40,8 @@ namespace HyparRevitCurtainWallConverter
 
                 Line line = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-                curtainWallMullions.Add(new Mullion(GetMullionShape(0.5,0.5),line));
+
+                curtainWallMullions.Add(new Mullion(line,GetMullionShape(0.5,0.5), material));
             }
 
             foreach (var vGrid in vGridLines)
@@ -48,14 +50,15 @@ namespace HyparRevitCurtainWallConverter
 
                 Line line = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-                curtainWallMullions.Add(new Mullion(GetMullionShape(0.5, 0.5), line));
+                //curtainWallMullions.Add(nm);
+                curtainWallMullions.Add(new Mullion(line, GetMullionShape(0.5, 0.5), material));
             }
 
-            Elements.CurtainWallPanel hyparCurtainWallPanel = new CurtainWallPanel(curtainWallMullions,null,null);
+            //Elements.CurtainWallPanel hyparCurtainWallPanel = new CurtainWallPanel(curtainWallMullions,null,null);
 
 
 
-            return curtainWallMullions;
+            return curtainWallMullions.ToArray();
         }
 
         private static Profile GetMullionShape(double width, double height)
