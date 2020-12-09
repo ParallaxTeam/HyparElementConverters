@@ -117,13 +117,13 @@ namespace HyparRevitCurtainWallConverter
             var mullionCurve = revitMullion.LocationCurve;
 
             Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true), mullionCurve.GetEndPoint(1).ToVector3(true));
-
+            
             //build a sweep with the default profile
             List<SolidOperation> list = new List<SolidOperation>
             {
                 new Sweep(prof,centerLine,0,0,false)
             };
-            return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
+            return new Mullion(new Transform(), DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
         }
 
         private static Element[] PanelAreasFromCells(ADSK.CurtainCell[] curtainCells)
