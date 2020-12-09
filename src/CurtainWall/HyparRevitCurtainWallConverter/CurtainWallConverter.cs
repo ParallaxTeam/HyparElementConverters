@@ -8,6 +8,7 @@ using ADSK = Autodesk.Revit.DB;
 using Elements.Conversion.Revit;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
+using Elements.Geometry.Solids;
 using Element = Elements.Element;
 
 namespace HyparRevitCurtainWallConverter
@@ -31,7 +32,8 @@ namespace HyparRevitCurtainWallConverter
 
         public Element[] FromRevit(ADSK.Element revitElement, ADSK.Document document)
         {
-            return MakeHyparCurtainWallFromRevitCurtainWall(revitElement);
+            
+            return Create.MakeHyparCurtainWallFromRevitCurtainWall(revitElement, document).ToArray();
         }
 
         public ADSK.ElementId[] ToRevit(Element hyparElement, LoadContext context)
@@ -44,45 +46,6 @@ namespace HyparRevitCurtainWallConverter
             throw new NotImplementedException();
         }
 
-        private static Element[] MakeHyparCurtainWallFromRevitCurtainWall(ADSK.Element revitElement)
-        {
-            var doc = revitElement.Document;
-            var curtainWall = revitElement as ADSK.Wall;
-
-            //model curves to return
-            var curtainWallElements = new List<Element>();
-
-            if (curtainWall.CurtainGrid == null)
-            {
-                throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
-            }
-
-            var uGridLines = curtainWall.CurtainGrid.GetUGridLineIds()
-                .Select(c => doc.GetElement(c) as ADSK.CurtainGridLine).ToArray();
-
-            var vGridLines = curtainWall.CurtainGrid.GetVGridLineIds()
-                .Select(c => doc.GetElement(c) as ADSK.CurtainGridLine).ToArray();
-
-            foreach (var uGrid in uGridLines)
-            {
-                var fullCurve = uGrid.FullCurve;
-
-                Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
-
-                curtainWallElements.Add(new ModelCurve(curve));
-            }
-
-            foreach (var vGrid in vGridLines)
-            {
-                var fullCurve = vGrid.FullCurve;
-
-                Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
-
-                curtainWallElements.Add(new ModelCurve(curve,BuiltInMaterials.Black));
-            }
-           
-            return curtainWallElements.ToArray();
-
-        }
+      
     }
 }

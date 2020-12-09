@@ -105,7 +105,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Create.cs" />
     <Compile Include="CurtainWallConverter.cs" />
+    <Compile Include="CurtainWallPanel.g.cs" />
+    <Compile Include="Mullion.g.cs" />
+    <Compile Include="PanelArea.g.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
