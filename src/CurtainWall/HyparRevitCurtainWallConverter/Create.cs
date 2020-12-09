@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autodesk.Revit.Creation;
 using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
@@ -34,57 +35,55 @@ namespace HyparRevitCurtainWallConverter
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
             }
 
-            var uGridLines = curtainWall.CurtainGrid.GetUGridLineIds()
-                .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
-
-            var vGridLines = curtainWall.CurtainGrid.GetVGridLineIds()
-                .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
-
-            foreach (var uGrid in uGridLines)
-            {
-                var fullCurve = uGrid.FullCurve;
-
-                Line centerLine = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
-
-
-                ModelCurve mCurve = new ModelCurve(centerLine);
-                curtainWallElements.Add(mCurve);
-
-                List<SolidOperation> list = new List<SolidOperation>
-                {
-                    new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
-                };
-
-                var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
-
-                curtainWallElements.Add(mullion);
-            }
-
-            foreach (var vGrid in vGridLines)
-            {
-                var fullCurve = vGrid.FullCurve;
-
-                Line centerLine = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
-
-
-                ModelCurve mCurve = new ModelCurve(centerLine);
-                curtainWallElements.Add(mCurve);
-
-                List<SolidOperation> list = new List<SolidOperation>
-                {
-                    new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
-                };
-
-                var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
-
-                curtainWallElements.Add(mullion);
-            }
+            //add the U direction mullions
+            curtainWallElements.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid));
+            //add the V direction mullions
+            curtainWallElements.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid, false));
 
             //Elements.CurtainWallPanel hyparCurtainWallPanel = new CurtainWallPanel(curtainWallMullions,null,null);
 
 
 
             return curtainWallElements.ToArray();
+        }
+
+        private static Element[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid, bool uDirection = true)
+        {
+            List<Element> mullions = new List<Element>();
+
+            var gridIds = uDirection ? curtainGrid.GetUGridLineIds() : curtainGrid.GetVGridLineIds();
+
+            if (!gridIds.Any())
+            {
+                var direction = uDirection ? "u" : "v";
+                throw new InvalidOperationException($"There are no gridlines in the {direction} direction.");
+            }
+
+            var gridLines = gridIds
+                    .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
+
+            foreach (var gridLine in gridLines)
+            {
+                var fullCurve = gridLine.FullCurve;
+
+                Line centerLine = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
+
+                //TODO: Remove this, but for now we are adding the curves. Might consider leaving for the Hyper -> Revit Translation
+                ModelCurve mCurve = new ModelCurve(centerLine);
+                mullions.Add(mCurve);
+
+                //build a sweep with the default profile
+                List<SolidOperation> list = new List<SolidOperation>
+                {
+                    new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
+                };
+
+                var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
+
+                mullions.Add(mullion);
+            }
+
+            return mullions.ToArray();
         }
 
     }
