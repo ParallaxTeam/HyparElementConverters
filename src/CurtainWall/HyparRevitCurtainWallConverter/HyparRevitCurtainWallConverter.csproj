@@ -106,8 +106,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Create.cs" />
+    <Compile Include="CurtainWall.g.cs" />
     <Compile Include="CurtainWallConverter.cs" />
-    <Compile Include="CurtainWallPanel.g.cs" />
     <Compile Include="Mullion.g.cs" />
     <Compile Include="PanelArea.g.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -122,7 +122,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if not exist "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)" mkdir "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)"
-copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(AppData)\Autodesk\Revit\Addins\2021\Hypar.Revit\Converters\$(ProjectName)"</PostBuildEvent>
+    <PostBuildEvent>if not exist "$(HomePath)\.hypar\converters\revit\$(ProjectName)" mkdir "$(HomePath)\.hypar\converters\revit\$(ProjectName)"
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"</PostBuildEvent>
   </PropertyGroup>
 </Project>

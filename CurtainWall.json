@@ -1,0 +1,48 @@
+{
+    "x-namespace": "Elements",
+    "allOf": [
+        {
+            "$ref": "https://prod-api.hypar.io/schemas/GeometricElement"
+        }
+    ],
+    "required": [],
+    "properties": {
+        "Profile": {
+            "description": "The overall profile of the wall",
+            "$ref": "https://hypar.io/Schemas/Geometry/Profile.json"
+        },
+        "GridLines": {
+            "type": "array",
+            "items": {
+                "$ref": "https://prod-api.hypar.io/schemas/Curve"
+            }
+        },
+        "Mullions": {
+            "type": "array",
+            "items": {
+                "$ref": "https://prod-api.hypar.io/schemas/Mullion"
+            }
+        },
+        "Spandrel Panels": {
+            "description": "Opaque panels in the curtain wall system",
+            "type": "array",
+            "items": {
+                "$ref": "https://prod-api.hypar.io/schemas/PanelArea"
+            }
+        },
+        "Glazed Panels": {
+            "description": "Transparent vision glass panels in the curtain wall system",
+            "type": "array",
+            "items": {
+                "$ref": "https://prod-api.hypar.io/schemas/PanelArea"
+            }
+        }
+    },
+    "additionalProperties": false,
+    "description": "A curtain wall system",
+    "$id": "CurtainWall",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "discriminator": "discriminator",
+    "type": "object",
+    "title": "CurtainWall"
+}
