@@ -50,7 +50,7 @@ namespace HyparRevitCurtainWallConverter
             var curtainWall = revitElement as ADSK.Wall;
 
             //model curves to return
-            var modelCurves = new List<ModelCurve>();
+            var curtainWallElements = new List<Element>();
 
             if (curtainWall.CurtainGrid == null)
             {
@@ -69,7 +69,7 @@ namespace HyparRevitCurtainWallConverter
 
                 Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-                modelCurves.Add(new ModelCurve(curve));
+                curtainWallElements.Add(new ModelCurve(curve));
             }
 
             foreach (var vGrid in vGridLines)
@@ -78,10 +78,10 @@ namespace HyparRevitCurtainWallConverter
 
                 Curve curve = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-                modelCurves.Add(new ModelCurve(curve,BuiltInMaterials.Black));
+                curtainWallElements.Add(new ModelCurve(curve,BuiltInMaterials.Black));
             }
-
-            return modelCurves.ToArray();
+           
+            return curtainWallElements.ToArray();
 
         }
     }
