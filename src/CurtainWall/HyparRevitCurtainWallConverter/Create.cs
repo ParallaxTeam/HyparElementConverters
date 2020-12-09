@@ -15,13 +15,19 @@ namespace HyparRevitCurtainWallConverter
 {
     public static class Create
     {
+        private static Profile DefaultMullionProfile()
+        {
+            return new Profile(Polygon.Rectangle(0.0635, 0.0635));
+        }
+        private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
+
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
-            //var material = new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
             var curtainWall = revitElement as Autodesk.Revit.DB.Wall;
 
-            //model curves to return
-            var curtainWallMullions = new List<Element>();
+            //curtain wall elements
+
+            var curtainWallElements = new List<Element>();
 
             if (curtainWall.CurtainGrid == null)
             {
@@ -38,33 +44,48 @@ namespace HyparRevitCurtainWallConverter
             {
                 var fullCurve = uGrid.FullCurve;
 
-                Line line = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
+                Line centerLine = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
 
-                curtainWallMullions.Add(new Mullion(line,GetMullionShape(0.5,0.5), material));
+                ModelCurve mCurve = new ModelCurve(centerLine);
+                curtainWallElements.Add(mCurve);
+
+                List<SolidOperation> list = new List<SolidOperation>
+                {
+                    new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
+                };
+
+                var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
+
+                curtainWallElements.Add(mullion);
             }
 
             foreach (var vGrid in vGridLines)
             {
                 var fullCurve = vGrid.FullCurve;
 
-                Line line = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
+                Line centerLine = new Line(fullCurve.GetEndPoint(0).ToVector3(), fullCurve.GetEndPoint(1).ToVector3());
 
-                //curtainWallMullions.Add(nm);
-                curtainWallMullions.Add(new Mullion(line, GetMullionShape(0.5, 0.5), material));
+
+                ModelCurve mCurve = new ModelCurve(centerLine);
+                curtainWallElements.Add(mCurve);
+
+                List<SolidOperation> list = new List<SolidOperation>
+                {
+                    new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
+                };
+
+                var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
+
+                curtainWallElements.Add(mullion);
             }
 
             //Elements.CurtainWallPanel hyparCurtainWallPanel = new CurtainWallPanel(curtainWallMullions,null,null);
 
 
 
-            return curtainWallMullions.ToArray();
+            return curtainWallElements.ToArray();
         }
 
-        private static Profile GetMullionShape(double width, double height)
-        {
-            Polygon outerPolygon = Polygon.Rectangle(width,height);
-            return new Profile(outerPolygon);
-        }
     }
 }

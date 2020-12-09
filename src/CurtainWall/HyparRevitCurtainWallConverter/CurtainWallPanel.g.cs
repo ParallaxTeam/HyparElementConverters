@@ -27,21 +27,8 @@ namespace Elements
 	public partial class CurtainWallPanel : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]
-        public CurtainWallPanel(IList<Mullion> @mullions, 
-            IList<PanelArea> @spandrelPanels, 
-            IList<PanelArea> @glazedPanels, 
-            Transform @transform = null, 
-            Material @material = null, 
-            Representation @representation = null, 
-            bool @isElementDefinition = false, 
-            System.Guid @id = default(Guid), 
-            string @name = null)
-            : base(transform != null ? transform : new Transform(),
-                material != null ? material : BuiltInMaterials.Default,
-                null, 
-                isElementDefinition,
-                id != default(Guid) ? id : Guid.NewGuid(), 
-                name)
+        public CurtainWallPanel(IList<Mullion> @mullions, IList<PanelArea> @spandrelPanels, IList<PanelArea> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
+            : base(transform, material, representation, isElementDefinition, id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<CurtainWallPanel>
             ();
