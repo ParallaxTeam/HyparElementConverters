@@ -123,6 +123,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if not exist "$(HomePath)\.hypar\converters\revit\$(ProjectName)" mkdir "$(HomePath)\.hypar\converters\revit\$(ProjectName)"
-copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"</PostBuildEvent>
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).pdb" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"</PostBuildEvent>
   </PropertyGroup>
 </Project>

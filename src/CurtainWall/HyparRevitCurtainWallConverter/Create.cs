@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -41,8 +42,9 @@ namespace HyparRevitCurtainWallConverter
 
             //curtainWallElements.AddRange(PanelAreasFromCells(curtainCells));
 
-            //generate mullions
+            //generate interior mullions
             mullions.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid));
+
 
             CurtainWall hyparCurtainWall = new CurtainWall(null,null, mullions,null,null,null,null,null,false, Guid.NewGuid(),"");
 
@@ -62,49 +64,41 @@ namespace HyparRevitCurtainWallConverter
 
             foreach (ADSK.Mullion mullion in allMullions)
             {
+                mullion.get_Geometry()
                 mullions.Add(mullion.ToHyparMullion());
             }
 
             return mullions.ToArray();
         }
 
-        private static Mullion[] GridsNoMullions(ADSK.Document doc, ADSK.CurtainGrid curtainGrid, bool uDirection = true)
-        {
-            List<Mullion> mullions = new List<Mullion>();
+        //private static Mullion[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid, bool uDirection = true)
+        //{
+        //    List<Mullion> mullions = new List<Mullion>();
 
-            var gridIds = uDirection ? curtainGrid.GetUGridLineIds() : curtainGrid.GetVGridLineIds();
-            
-            if (!gridIds.Any())
-            {
-                var direction = uDirection ? "u" : "v";
-                throw new InvalidOperationException($"There are no gridlines in the {direction} direction.");
-            }
+        //    var gridIds = uDirection ? curtainGrid.GetUGridLineIds() : curtainGrid.GetVGridLineIds();
 
-            var gridLines = gridIds
-                    .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
+        //    if (!gridIds.Any())
+        //    {
+        //        var direction = uDirection ? "u" : "v";
+        //        throw new InvalidOperationException($"There are no gridlines in the {direction} direction.");
+        //    }
 
-            foreach (var gridLine in gridLines)
-            {
-                var segments = gridLine.ExistingSegmentCurves;
+        //    var gridLines = gridIds
+        //            .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
 
-                foreach (ADSK.Curve segment in segments)
-                {
-                    Line centerLine = new Line(segment.GetEndPoint(0).ToVector3(), segment.GetEndPoint(1).ToVector3());
+        //    foreach (var gridLine in gridLines)
+        //    {
+        //        var revitMullions = gridLine.GetDependentElements(
+        //            new ADSK.ElementCategoryFilter(ADSK.BuiltInCategory.OST_CurtainWallMullions)).Select(m => doc.GetElement(m) as ADSK.Mullion);
 
-                    //build a sweep with the default profile
-                    List<SolidOperation> list = new List<SolidOperation>
-                    {
-                        new Sweep(DefaultMullionProfile(),centerLine,0,0,false)
-                    };
+        //        foreach (var revitMullion in revitMullions)
+        //        {
+        //            mullions.Add(revitMullion.ToHyparMullion());
+        //        }
+        //    }
 
-                    var mullion = new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
-                   
-                    mullions.Add(mullion);
-                }
-            }
-
-            return mullions.ToArray();
-        }
+        //    return mullions.ToArray();
+        //}
 
         private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion)
         {
@@ -112,16 +106,21 @@ namespace HyparRevitCurtainWallConverter
             var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
             var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
 
-            var prof = new Profile(Polygon.Rectangle(Units.FeetToMeters(thickness),Units.FeetToMeters(side1 + side2)));
+            var profile =
+                new Profile(Polygon.Rectangle(Units.FeetToMeters(thickness), Units.FeetToMeters(side1 + side2)));
 
             var mullionCurve = revitMullion.LocationCurve;
 
+            //TODO: Make sure these mullions get oriented correctly. Working kinda sorta right now.
             Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true), mullionCurve.GetEndPoint(1).ToVector3(true));
-            
+            var transform = centerLine.TransformAt(0);
+            var transFormedProf = transform.OfProfile(profile);
+
             //build a sweep with the default profile
             List<SolidOperation> list = new List<SolidOperation>
             {
-                new Sweep(prof,centerLine,0,0,false)
+                new Extrude(transFormedProf,centerLine.Length(),centerLine.Direction(),false)
+                //new Sweep(transFormedProf,centerLine,0,0,false)
             };
             return new Mullion(new Transform(), DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
         }
@@ -150,6 +149,22 @@ namespace HyparRevitCurtainWallConverter
             }
             
             return panels.ToArray();
+        }
+        private static IEnumerable<ADSK.Solid> GetSolidsFromGeometry(ADSK.GeometryObject g)
+        {
+            IEnumerable<ADSK.Solid> solids;
+            if ((object)(g as ADSK.GeometryInstance) == (object)null)
+            {
+                solids = (!(g is ADSK.Solid) ? new ADSK.Solid[0] : new ADSK.Solid[] { g as ADSK.Solid });
+            }
+            else
+            {
+                solids = (
+                    from s in ((ADSK.GeometryInstance)g).GetInstanceGeometry()
+                    where s.GetType() == typeof(ADSK.Solid)
+                    select s).Cast<ADSK.Solid>();
+            }
+            return solids;
         }
     }
 }
