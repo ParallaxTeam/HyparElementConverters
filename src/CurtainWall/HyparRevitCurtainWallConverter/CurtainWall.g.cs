@@ -27,18 +27,18 @@ namespace Elements
 	public partial class CurtainWall : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]
-        public CurtainWall(Profile @profile, IList<Curve> @gridLines, IList<Mullion> @mullions, IList<PanelArea> @spandrelPanels, IList<PanelArea> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
+        public CurtainWall(Profile @profile, IList<ModelCurve> @gridlines, IList<Mullion> @mullions, IList<PanelArea> @spandrelPanels, IList<PanelArea> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
             : base(transform, material, representation, isElementDefinition, id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<CurtainWall>
             ();
             if(validator != null)
             {
-                validator.PreConstruct(new object[]{ @profile, @gridLines, @mullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
+                validator.PreConstruct(new object[]{ @profile, @gridlines, @mullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
             }
         
                 this.Profile = @profile;
-                this.GridLines = @gridLines;
+                this.Gridlines = @gridlines;
                 this.Mullions = @mullions;
                 this.SpandrelPanels = @spandrelPanels;
                 this.GlazedPanels = @glazedPanels;
@@ -53,8 +53,8 @@ namespace Elements
         [Newtonsoft.Json.JsonProperty("Profile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Profile Profile { get; set; }
     
-        [Newtonsoft.Json.JsonProperty("GridLines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public IList<Curve> GridLines { get; set; }
+        [Newtonsoft.Json.JsonProperty("Gridlines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public IList<ModelCurve> Gridlines { get; set; }
     
         [Newtonsoft.Json.JsonProperty("Mullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Mullion> Mullions { get; set; }

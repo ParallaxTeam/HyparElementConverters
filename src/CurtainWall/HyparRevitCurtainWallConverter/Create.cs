@@ -31,26 +31,71 @@ namespace HyparRevitCurtainWallConverter
 
             //our lists to pack with hypar elements
             var mullions = new List<Mullion>();
-
+            var curtainGridLines = new List<ModelCurve>();
             //right now we are targeting curtain walls with stuff in em
             if (curtainWall.CurtainGrid == null)
             {
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
             }
 
-            var curtainCells = curtainWall.CurtainGrid.GetCurtainCells().ToArray();
-
-            //curtainWallElements.AddRange(PanelAreasFromCells(curtainCells));
-
             //generate interior mullions
-            mullions.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid));
+            //mullions.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid));
 
+            //generate curtain grid
+            curtainGridLines.AddRange(GenerateCurtainGridCurves(doc,curtainWall.CurtainGrid));
 
-            CurtainWall hyparCurtainWall = new CurtainWall(null, null, mullions, null, null, null, null, null, false, Guid.NewGuid(), "");
+            //get profile
+            var curtainWallProfile = GetCurtainWallProfile(curtainWall);
+
+            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, curtainGridLines, mullions, null, null, null, null, null, false, Guid.NewGuid(), "");
 
             return new List<Element>() { hyparCurtainWall }.ToArray();
         }
 
+        private static Profile GetCurtainWallProfile(ADSK.Wall curtainWall)
+        {
+            Polygon outerPolygon = null;
+            List<Polygon> voids = new List<Polygon>();
+
+            var polygons = curtainWall.GetProfile();
+            if (polygons == null)
+            {
+                return null;
+            }
+
+            outerPolygon = polygons[0];
+            if (polygons.Count > 1)
+            {
+                voids.AddRange(polygons.Skip(1));
+            }
+
+            //build our profile
+            return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
+        }
+
+        private static ModelCurve[] GenerateCurtainGridCurves(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
+        {
+            var modelCurves = new List<ModelCurve>();
+            var curtainGridLineIds = new List<ADSK.ElementId>();
+            curtainGridLineIds.AddRange(curtainGrid.GetUGridLineIds());
+            curtainGridLineIds.AddRange(curtainGrid.GetVGridLineIds());
+
+            if (!curtainGridLineIds.Any())
+            {
+                throw new InvalidOperationException($"There are curtain grids in this curtain wall.");
+            }
+
+            foreach (var gridline in curtainGridLineIds.Select(id => doc.GetElement(id) as ADSK.CurtainGridLine))
+            {
+                foreach (ADSK.Curve curve in gridline.ExistingSegmentCurves)
+                {
+                    var line = new Line(curve.GetEndPoint(0).ToVector3(true), curve.GetEndPoint(1).ToVector3(true));
+                    modelCurves.Add(new ModelCurve(line));
+                }
+            }
+
+            return modelCurves.ToArray();
+        }
         private static Mullion[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
         {
             List<Mullion> mullions = new List<Mullion>();
@@ -70,51 +115,6 @@ namespace HyparRevitCurtainWallConverter
             return mullions.ToArray();
         }
 
-        private static Mullion[] GetInteriorMullions(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
-        {
-            InteriorMullionIds.Clear();
-            List<Mullion> mullions = new List<Mullion>();
-
-            var gridIds = new List<ADSK.ElementId>();
-            gridIds.AddRange(curtainGrid.GetUGridLineIds());
-            gridIds.AddRange(curtainGrid.GetVGridLineIds());
-
-            var gridLines = gridIds
-                    .Select(c => doc.GetElement(c) as Autodesk.Revit.DB.CurtainGridLine).ToArray();
-
-            //this uses a transaction to find the inner mullions.
-            using (ADSK.Transaction findMullionTransaction = new ADSK.Transaction(doc, "Finding matching mullion."))
-            {
-                findMullionTransaction.Start();
-                ADSK.FailureHandlingOptions failOpt = findMullionTransaction.GetFailureHandlingOptions();
-                failOpt.SetFailuresPreprocessor(new MullionFinder());
-                findMullionTransaction.SetFailureHandlingOptions(failOpt);
-                foreach (var gridLine in gridLines)
-                {
-                    foreach (ADSK.Curve segment in gridLine.ExistingSegmentCurves)
-                    {
-                        gridLine.RemoveSegment(segment);
-                    }
-
-                }
-                findMullionTransaction.Commit();
-            }
-
-            if (!InteriorMullionIds.Any())
-            {
-                throw new InvalidOperationException($"There are no interior mullions on this curtain wall.");
-            }
-
-            foreach (var id in InteriorMullionIds)
-            {
-                var revitMullion = doc.GetElement(id) as ADSK.Mullion;
-                mullions.Add(revitMullion.ToHyparMullion());
-            }
-
-
-            return mullions.ToArray();
-        }
-
         private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion)
         {
             List<ADSK.PlanarFace> faces = new List<ADSK.PlanarFace>();
@@ -128,9 +128,10 @@ namespace HyparRevitCurtainWallConverter
                     faces.Add(planarFace);
                 }
             }
-            
 
-            var profiles = faces.OrderBy(f => f.Origin.DistanceTo(revitMullion.LocationCurve.GetEndPoint(0))).First().GetProfiles(true);
+            var orderedFaces = faces.OrderBy(f => f.Area);
+
+            var profiles = orderedFaces.First().GetProfiles(true);
 
             Profile profile = null;
             try
@@ -151,7 +152,6 @@ namespace HyparRevitCurtainWallConverter
             //TODO: Make sure these mullions get oriented correctly. Working kinda sorta right now.
             Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true), mullionCurve.GetEndPoint(1).ToVector3(true));
 
-            
             //build a sweep with the default profile
             List <SolidOperation> list = new List<SolidOperation>
             {
