@@ -32,20 +32,30 @@ namespace HyparRevitCurtainWallConverter
             //our lists to pack with hypar elements
             var mullions = new List<Mullion>();
             var curtainGridLines = new List<ModelCurve>();
+
             //right now we are targeting curtain walls with stuff in em
-            if (curtainWall.CurtainGrid == null)
+            var curtainGrid = curtainWall.CurtainGrid;
+            if (curtainGrid == null)
             {
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
             }
-
-            //generate interior mullions
-            //mullions.AddRange(MullionFromCurtainGrid(doc, curtainWall.CurtainGrid));
-
-            //generate curtain grid
-            curtainGridLines.AddRange(GenerateCurtainGridCurves(doc,curtainWall.CurtainGrid));
+            //get the revit grid lines for use
+            var curtainGridLineIds = new List<ADSK.ElementId>();
+            curtainGridLineIds.AddRange(curtainGrid.GetUGridLineIds());
+            curtainGridLineIds.AddRange(curtainGrid.GetVGridLineIds());
+            var revitGridLines = curtainGridLineIds.Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
 
             //get profile
             var curtainWallProfile = GetCurtainWallProfile(curtainWall);
+
+            if (curtainGridLineIds.Any())
+            {
+                //generate curtain grid
+                curtainGridLines.AddRange(GenerateCurtainGridCurves(revitGridLines));
+
+                //generate interior mullions
+                mullions.AddRange(MullionFromCurtainGrid(revitGridLines));
+            }
 
             CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, curtainGridLines, mullions, null, null, null, null, null, false, Guid.NewGuid(), "");
 
@@ -73,19 +83,11 @@ namespace HyparRevitCurtainWallConverter
             return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
         }
 
-        private static ModelCurve[] GenerateCurtainGridCurves(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
+        private static ModelCurve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines)
         {
             var modelCurves = new List<ModelCurve>();
-            var curtainGridLineIds = new List<ADSK.ElementId>();
-            curtainGridLineIds.AddRange(curtainGrid.GetUGridLineIds());
-            curtainGridLineIds.AddRange(curtainGrid.GetVGridLineIds());
 
-            if (!curtainGridLineIds.Any())
-            {
-                throw new InvalidOperationException($"There are curtain grids in this curtain wall.");
-            }
-
-            foreach (var gridline in curtainGridLineIds.Select(id => doc.GetElement(id) as ADSK.CurtainGridLine))
+            foreach (var gridline in gridLines)
             {
                 foreach (ADSK.Curve curve in gridline.ExistingSegmentCurves)
                 {
@@ -96,66 +98,44 @@ namespace HyparRevitCurtainWallConverter
 
             return modelCurves.ToArray();
         }
-        private static Mullion[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
+        private static Mullion[] MullionFromCurtainGrid(List<ADSK.CurtainGridLine> gridLines)
         {
             List<Mullion> mullions = new List<Mullion>();
 
-            if (!curtainGrid.GetMullionIds().Any())
+            foreach (var gridLine in gridLines)
             {
-                throw new InvalidOperationException($"There are no mullions on this curtain wall.");
+                var attachedMullions = gridLine.AttachedMullions();
+                if (!attachedMullions.Any()) continue;
+                foreach (var mullion in attachedMullions)
+                {
+                    mullions.Add(mullion.ToHyparMullion());
+                }
+
             }
-
-            var allMullions = curtainGrid.GetMullionIds().Select(id => doc.GetElement(id) as ADSK.Mullion);
-
-            foreach (ADSK.Mullion mullion in allMullions)
-            {
-                mullions.Add(mullion.ToHyparMullion());
-            }
-
             return mullions.ToArray();
         }
 
         private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion)
         {
-            List<ADSK.PlanarFace> faces = new List<ADSK.PlanarFace>();
-            IEnumerable<ADSK.Solid> solids = revitMullion.get_Geometry(new ADSK.Options()).SelectMany<ADSK.GeometryObject, ADSK.Solid>((ADSK.GeometryObject g) => GetSolidsFromGeometry(g)); ;
-
-            foreach (ADSK.Solid solid in solids)
-            {
-                foreach (ADSK.Face face in solid.Faces)
-                {
-                    ADSK.PlanarFace planarFace = face as ADSK.PlanarFace;
-                    faces.Add(planarFace);
-                }
-            }
-
-            var orderedFaces = faces.OrderBy(f => f.Area);
-
-            var profiles = orderedFaces.First().GetProfiles(true);
-
-            Profile profile = null;
-            try
-            {
-                profile = profiles.Aggregate<Profile>((Profile p1, Profile p2) => p1.Union(p2, 1E-05));
-            }
-            catch
-            {
-                profile = (
-                    from p in profiles
-                    orderby p.Perimeter.Start.Z
-                    select p).First<Profile>();
-            }
-
-            var mullionCurve = revitMullion.LocationCurve;
+            var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble(); 
+            var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
+            var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
             
 
+            Profile profile = new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2 ),Units.FeetToMeters(thickness)));
+
+            var mullionCurve = revitMullion.LocationCurve;
+           
             //TODO: Make sure these mullions get oriented correctly. Working kinda sorta right now.
-            Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true), mullionCurve.GetEndPoint(1).ToVector3(true));
+            Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true),
+                mullionCurve.GetEndPoint(1).ToVector3(true));
+
+            var transProf = centerLine.TransformAt(0).OfProfile(profile);
 
             //build a sweep with the default profile
             List <SolidOperation> list = new List<SolidOperation>
             {
-                new Extrude(profile, centerLine.Length(), centerLine.Direction(), false)
+                new Extrude(transProf, centerLine.Length(), centerLine.Direction(), false)
                 //new Sweep(profile,centerLine,0,0,false)
             };
             return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
@@ -166,6 +146,7 @@ namespace HyparRevitCurtainWallConverter
             var panels = new List<Element>();
             foreach (var cell in curtainCells)
             {
+                
                 var enumCurveLoops = cell.CurveLoops.GetEnumerator();
                 for (; enumCurveLoops.MoveNext();)
                 {
@@ -185,22 +166,6 @@ namespace HyparRevitCurtainWallConverter
             }
 
             return panels.ToArray();
-        }
-        private static IEnumerable<ADSK.Solid> GetSolidsFromGeometry(ADSK.GeometryObject g)
-        {
-            IEnumerable<ADSK.Solid> solids;
-            if ((object)(g as ADSK.GeometryInstance) == (object)null)
-            {
-                solids = (!(g is ADSK.Solid) ? new ADSK.Solid[0] : new ADSK.Solid[] { g as ADSK.Solid });
-            }
-            else
-            {
-                solids = (
-                    from s in ((ADSK.GeometryInstance)g).GetInstanceGeometry()
-                    where s.GetType() == typeof(ADSK.Solid)
-                    select s).Cast<ADSK.Solid>();
-            }
-            return solids;
         }
 
     }

@@ -73,5 +73,32 @@ namespace HyparRevitCurtainWallConverter
 
             return polygons;
         }
+        //this code is made possible thanks to this source code available under the MIT license
+        //https://github.com/mcneel/rhino.inside-revit/blob/30b802048540c676ce81d5c924008c8cd31d8a7a/src/RhinoInside.Revit.GH/Components/Element/CurtainWall/AnalyzeCurtainGridLine.cs#L94
+        public static List<Mullion> AttachedMullions(this CurtainGridLine gridLine)
+        {
+            // find attached mullions
+            const double EPSILON = 0.1;
+            var attachedMullions = new List<Mullion>();
+            var famInstFilter = new ElementClassFilter(typeof(FamilyInstance));
+            // collect familyinstances and filter for DB.Mullion
+            var dependentMullions = gridLine.GetDependentElements(famInstFilter).Select(x => gridLine.Document.GetElement(x)).OfType<Mullion>();
+            // for each DB.Mullion that is dependent on this DB.CurtainGridLine
+            foreach (Mullion mullion in dependentMullions)
+            {
+                if (mullion.LocationCurve != null)
+                {
+                    // check the distance of the DB.Mullion curve start and end, to the DB.CurtainGridLine axis curve
+                    var mcurve = mullion.LocationCurve;
+                    var mstart = mcurve.GetEndPoint(0);
+                    var mend = mcurve.GetEndPoint(1);
+                    // if the distance is less than EPSILON, the DB.Mullion axis and DB.CurtainGridLine axis are almost overlapping
+                    if (gridLine.FullCurve.Distance(mstart) < EPSILON && gridLine.FullCurve.Distance(mend) < EPSILON)
+                        attachedMullions.Add(mullion);
+                }
+            }
+
+            return attachedMullions;
+        }
     }
 }
