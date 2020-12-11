@@ -27,7 +27,7 @@ namespace Elements
 	public partial class CurtainWall : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]
-        public CurtainWall(Profile @profile, IList<ModelCurve> @gridlines, IList<Mullion> @mullions, IList<PanelArea> @spandrelPanels, IList<PanelArea> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
+        public CurtainWall(Profile @profile, IList<ModelCurve> @gridlines, IList<Mullion> @mullions, IList<Panel> @spandrelPanels, IList<Panel> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
             : base(transform, material, representation, isElementDefinition, id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<CurtainWall>
@@ -61,11 +61,11 @@ namespace Elements
     
         /// <summary>Opaque panels in the curtain wall system</summary>
         [Newtonsoft.Json.JsonProperty("Spandrel Panels", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public IList<PanelArea> SpandrelPanels { get; set; }
+        public IList<Panel> SpandrelPanels { get; set; }
     
         /// <summary>Transparent vision glass panels in the curtain wall system</summary>
         [Newtonsoft.Json.JsonProperty("Glazed Panels", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public IList<PanelArea> GlazedPanels { get; set; }
+        public IList<Panel> GlazedPanels { get; set; }
     
     
     }
