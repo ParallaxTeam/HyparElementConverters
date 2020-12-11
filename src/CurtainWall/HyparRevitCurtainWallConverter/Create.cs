@@ -133,24 +133,39 @@ namespace HyparRevitCurtainWallConverter
             return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
         }
 
-        private static Panel[] PanelsFromCells(ADSK.CurtainCell[] curtainCells, ADSK.Panel[])
+        private static Panel[] PanelsFromCells(ADSK.CurtainCell[] curtainCells, ADSK.Panel[] revitPanels)
         {
             var panels = new List<Panel>();
-            foreach (var cell in curtainCells)
+
+            for (int i = 0; i < curtainCells.Length; i++)
             {
+                var revitPanel = revitPanels[i];
+                Material material = null;
+                try
+                {
+                    var revmaterial = revitPanel.Document.GetElement(revitPanel.Document.GetElement(revitPanel.GetTypeId())
+                        .get_Parameter(ADSK.BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()) as ADSK.Material;
+                    material = revmaterial.ToElementsMaterial();
+                }
+                catch (Exception)
+                {
+                    material = BuiltInMaterials.Glass;
+                }
+                
+                var cell = curtainCells[i];
+
                 try
                 {
                     var curves = cell.CurveLoops.ToPolyCurves();
-
-
-                    Panel panel = new Panel(new Polygon(curves.First().Vertices), BuiltInMaterials.Glass, null,null, false, Guid.NewGuid(), null);
+                    Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), null);
                     panels.Add(panel);
                 }
                 catch (Exception e)
                 {
-                    //
+                    //suppress for now
                 }
             }
+
 
             return panels.ToArray();
         }
