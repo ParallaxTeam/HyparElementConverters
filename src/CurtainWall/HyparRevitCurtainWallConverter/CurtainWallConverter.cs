@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elements;
 using ADSK = Autodesk.Revit.DB;
 using Elements.Conversion.Revit;
-using Elements.Conversion.Revit.Extensions;
-using Elements.Geometry;
-using Elements.Geometry.Solids;
 using Element = Elements.Element;
 
 namespace HyparRevitCurtainWallConverter

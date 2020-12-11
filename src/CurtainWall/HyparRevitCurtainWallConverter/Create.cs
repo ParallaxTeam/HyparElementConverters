@@ -15,6 +15,15 @@ namespace HyparRevitCurtainWallConverter
 
         private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
 
+        private static Profile DefaultMullionProfile(ADSK.Mullion revitMullion)
+        {
+            var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble();
+            var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
+            var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
+
+            return new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
+        }
+
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
             var curtainWall = revitElement as Autodesk.Revit.DB.Wall;
@@ -47,6 +56,7 @@ namespace HyparRevitCurtainWallConverter
                 mullions.AddRange(MullionFromCurtainGrid(revitGridLines));
             }
 
+            //add glazed panels
             glazedPanels.AddRange(PanelsFromCells(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray()));
 
             CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, curtainGridLines, mullions, glazedPanels, null, null, null, null, false, Guid.NewGuid(), "");
@@ -70,7 +80,6 @@ namespace HyparRevitCurtainWallConverter
             {
                 voids.AddRange(polygons.Skip(1));
             }
-
             //build our profile
             return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
         }
@@ -87,9 +96,10 @@ namespace HyparRevitCurtainWallConverter
                     modelCurves.Add(new ModelCurve(line));
                 }
             }
-
             return modelCurves.ToArray();
         }
+
+        //this gets the interior mullions from grid lines
         private static Mullion[] MullionFromCurtainGrid(List<ADSK.CurtainGridLine> gridLines)
         {
             List<Mullion> mullions = new List<Mullion>();
@@ -103,33 +113,30 @@ namespace HyparRevitCurtainWallConverter
                 {
                     mullions.Add(mullion.ToHyparMullion());
                 }
-
             }
             return mullions.ToArray();
         }
 
         private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion)
         {
-            var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble();
-            var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
-            var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
+            Profile prof = DefaultMullionProfile(revitMullion);
 
-            Profile profile = new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
+            ADSK.Line mullionCurve = revitMullion.LocationCurve as ADSK.Line;
 
-            var mullionCurve = revitMullion.LocationCurve;
-
-            //TODO: Make sure these mullions get oriented correctly. Working kinda sorta right now.
             Line centerLine = new Line(mullionCurve.GetEndPoint(0).ToVector3(true),
                 mullionCurve.GetEndPoint(1).ToVector3(true));
 
-            var transProf = centerLine.TransformAt(0).OfProfile(profile);
+            //get the transform from the mullion so we can orient the profile
+            var tForm = revitMullion.GetTransform().ToElementsTransform(true);
+
+            var transProfile = tForm.OfProfile(prof);
 
             //build a sweep with the default profile
             List<SolidOperation> list = new List<SolidOperation>
             {
-                new Extrude(transProf, centerLine.Length(), centerLine.Direction(), false)
-                //new Sweep(profile,centerLine,0,0,false)
+                new Extrude(transProfile, centerLine.Length(), centerLine.Direction(), false)
             };
+
             return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
         }
 
@@ -151,12 +158,12 @@ namespace HyparRevitCurtainWallConverter
                 {
                     material = BuiltInMaterials.Glass;
                 }
-                
+
                 var cell = curtainCells[i];
 
                 try
                 {
-                    var curves = cell.CurveLoops.ToPolyCurves();
+                    var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
                     Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), null);
                     panels.Add(panel);
                 }
