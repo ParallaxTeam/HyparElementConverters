@@ -24,6 +24,8 @@ namespace HyparRevitCurtainWallConverter
             return new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
         }
 
+        
+
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
             var curtainWall = revitElement as Autodesk.Revit.DB.Wall;
@@ -53,8 +55,11 @@ namespace HyparRevitCurtainWallConverter
                 curtainGridLines.AddRange(GenerateCurtainGridCurves(revitGridLines));
 
                 //generate interior mullions
-                mullions.AddRange(MullionFromCurtainGrid(revitGridLines));
+                mullions.AddRange(MullionFromCurtainGridLines(revitGridLines));
             }
+
+            //add perimeter mullions
+            mullions.AddRange(MullionFromCurtainGrid(doc,curtainGrid));
 
             //add glazed panels
             glazedPanels.AddRange(PanelsFromCells(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray()));
@@ -98,10 +103,27 @@ namespace HyparRevitCurtainWallConverter
             }
             return modelCurves.ToArray();
         }
+        private static Mullion[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
+        {
+            List<Mullion> mullions = new List<Mullion>();
+
+            foreach (var id in curtainGrid.GetMullionIds())
+            {
+                if (!InteriorMullionIds.Contains(id))
+                {
+                    var mullion = doc.GetElement(id) as ADSK.Mullion;
+
+                    mullions.Add(mullion.ToHyparMullion());
+                }
+            }
+            return mullions.ToArray();
+        }
 
         //this gets the interior mullions from grid lines
-        private static Mullion[] MullionFromCurtainGrid(List<ADSK.CurtainGridLine> gridLines)
+        private static Mullion[] MullionFromCurtainGridLines(List<ADSK.CurtainGridLine> gridLines)
         {
+            InteriorMullionIds.Clear();
+
             List<Mullion> mullions = new List<Mullion>();
 
             foreach (var gridLine in gridLines)
@@ -111,6 +133,8 @@ namespace HyparRevitCurtainWallConverter
 
                 foreach (var mullion in attachedMullions)
                 {
+                    InteriorMullionIds.Add(mullion.Id);
+
                     mullions.Add(mullion.ToHyparMullion());
                 }
             }
