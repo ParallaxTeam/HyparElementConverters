@@ -166,7 +166,6 @@ namespace HyparRevitCurtainWallConverter
                 }
             }
 
-
             return panels.ToArray();
         }
     }
