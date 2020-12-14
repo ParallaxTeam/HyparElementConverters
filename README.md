@@ -21,7 +21,7 @@ This repository houses code for Hypar converters for Revit developmed by Paralla
   - Code for export to Hypar.
   - Preliminary code for import to Revit with default types.
   - CurtainWall.g.cs extension to [Hypar.Elements library](https://github.com/hypar-io/Elements).
-* _other coming soonish?_
+* _others coming soonish?_
 
 ## How To Use
 * [Install Hypar Revit Plugin](https://github.com/hypar-io/Elements/releases/tag/0.8.1-alpha1-revit)
