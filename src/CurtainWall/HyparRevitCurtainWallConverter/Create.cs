@@ -259,7 +259,7 @@ namespace HyparRevitCurtainWallConverter
                         SpandrelPanels.Add(panel);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     //suppress for now
                 }

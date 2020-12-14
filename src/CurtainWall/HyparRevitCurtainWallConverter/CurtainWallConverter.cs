@@ -42,7 +42,7 @@ namespace HyparRevitCurtainWallConverter
 
         public Element[] OnlyLoadableElements(Element[] allElements)
         {
-            var tyeps = allElements.Select(e => e.GetType());
+            var types = allElements.Select(e => e.GetType());
             var elemType = typeof(Elements.CurtainWall);
             return allElements.Where(e => e.GetType().FullName == typeof(Elements.CurtainWall).FullName).ToArray();
         }
@@ -62,7 +62,7 @@ namespace HyparRevitCurtainWallConverter
                 curves.Add(line);
             }
 
-            //our default types for now TODO: Relate this somehow
+            //our default types for now TODO: Relate this somehow to the actual types
             var firstCurtainWallType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Curtain).Id;
             var mullionType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.MullionType))
                 .Cast<ADSK.MullionType>().FirstOrDefault();
