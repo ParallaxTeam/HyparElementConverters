@@ -49,7 +49,7 @@ namespace HyparRevitCurtainWallConverter
                     List<Vector3> vertices = new List<Vector3>();
                     foreach (ADSK.Curve c in outer)
                     {
-                        vertices.Add(c.GetEndPoint(0).ToVector3());
+                        vertices.Add(c.GetEndPoint(0).ToVector3(true));
                     }
                     polygons.Add(new Polygon(vertices));
                 }
@@ -60,7 +60,7 @@ namespace HyparRevitCurtainWallConverter
                     List<Vector3> vertices = new List<Vector3>();
                     foreach (ADSK.Curve c in inner)
                     {
-                        vertices.Add(c.GetEndPoint(0).ToVector3());
+                        vertices.Add(c.GetEndPoint(0).ToVector3(true));
                     }
                     Polygon innerPolygon = new Polygon(vertices);
                     polygons.Add(innerPolygon);

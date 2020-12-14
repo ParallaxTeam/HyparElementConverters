@@ -28,7 +28,8 @@ namespace Elements
     {
         [Newtonsoft.Json.JsonConstructor]
         public CurtainWall(Profile @profile, 
-            IList<ModelCurve> @gridlines, 
+            IList<Curve> @uGrids,
+            IList<Curve> @vGrids,
             IList<Mullion> @interiorMullions,
             IList<Mullion> @perimeterMullions,
             IList<Panel> @spandrelPanels, 
@@ -45,11 +46,12 @@ namespace Elements
             ();
             if(validator != null)
             {
-                validator.PreConstruct(new object[]{ @profile, @gridlines, @interiorMullions, @perimeterMullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
+                validator.PreConstruct(new object[]{ @profile, @uGrids, @vGrids, @interiorMullions, @perimeterMullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
             }
         
                 this.Profile = @profile;
-                this.Gridlines = @gridlines;
+                this.uGridlines = @uGrids;
+                this.vGridlines = @vGrids;
                 this.InteriorMullions = @interiorMullions;
                 this.PerimeterMullions = @perimeterMullions;
                 this.SpandrelPanels = @spandrelPanels;
@@ -65,13 +67,16 @@ namespace Elements
         [Newtonsoft.Json.JsonProperty("Profile", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Profile Profile { get; set; }
     
-        [Newtonsoft.Json.JsonProperty("Gridlines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public IList<ModelCurve> Gridlines { get; set; }
-    
-        [Newtonsoft.Json.JsonProperty("Mullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("uGridlines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public IList<Curve> uGridlines { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("vGridlines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public IList<Curve> vGridlines { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("InteriorMullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Mullion> InteriorMullions { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("Mullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonProperty("PerimeterMullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Mullion> PerimeterMullions { get; set; }
 
         /// <summary>Opaque panels in the curtain wall system</summary>

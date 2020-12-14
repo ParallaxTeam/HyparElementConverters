@@ -17,7 +17,6 @@ namespace HyparRevitCurtainWallConverter.Properties
 
                 if (BuiltInFailures.CurtainWallFailures.MullionsWillBeDeleted == id)
                 {
-                    Create.InteriorMullionIds.AddRange(f.GetFailingElementIds());
                     a.ResolveFailure(f);
                 }
             }

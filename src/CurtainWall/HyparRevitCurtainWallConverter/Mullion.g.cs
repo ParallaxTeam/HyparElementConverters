@@ -27,7 +27,12 @@ namespace Elements
 	public partial class Mullion : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]
-        public Mullion(Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
+        public Mullion(Transform @transform, 
+            Material @material, 
+            Representation @representation, 
+            bool @isElementDefinition, 
+            System.Guid @id, 
+            string @name)
             : base(transform, material, representation, isElementDefinition, id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<Mullion>

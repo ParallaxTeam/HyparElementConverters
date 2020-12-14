@@ -13,22 +13,25 @@ namespace HyparRevitCurtainWallConverter
     public static class Create
     {
         public static List<ADSK.ElementId> InteriorMullionIds = new List<ADSK.ElementId>();
-        public static List<Panel>GlazedPanels = new List<Panel>();
+        public static List<Panel> GlazedPanels = new List<Panel>();
         public static List<Panel> SpandrelPanels = new List<Panel>();
-
+        private static double CurrentWidth { get; set; } = 0;
         private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
 
         private static Profile GetMullionProfile(ADSK.Mullion revitMullion)
         {
-            var radius = revitMullion.get_Parameter(ADSK.BuiltInParameter.CIRC_MULLION_RADIUS)?.AsDouble();
+            var radius = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.CIRC_MULLION_RADIUS)?.AsDouble();
+
             switch (radius)
             {
                 case null:
                     var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble();
                     var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
                     var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
+                    CurrentWidth = Units.FeetToMeters(side1);
                     return new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
                 default:
+                    CurrentWidth = Units.FeetToMeters(Units.FeetToMeters(radius.Value));
                     return new Profile(new Circle(Units.FeetToMeters(radius.Value)).ToPolygon(10));
             }
         }
@@ -41,8 +44,8 @@ namespace HyparRevitCurtainWallConverter
             //our lists to pack with hypar elements
             var interiorMullions = new List<Mullion>();
             var perimeterMullions = new List<Mullion>();
-            var curtainGridLines = new List<ModelCurve>();
-
+            var uGrids = new List<Curve>();
+            var vGrids = new List<Curve>();
             //right now we are targeting curtain walls with stuff in em
             var curtainGrid = curtainWall.CurtainGrid;
             if (curtainGrid == null)
@@ -55,35 +58,54 @@ namespace HyparRevitCurtainWallConverter
             curtainGridLineIds.AddRange(curtainGrid.GetVGridLineIds());
             var revitGridLines = curtainGridLineIds.Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
 
-            //get profile
-            var curtainWallProfile = GetCurtainWallProfile(curtainWall);
-
             if (curtainGridLineIds.Any())
             {
                 //generate curtain grid
-                curtainGridLines.AddRange(GenerateCurtainGridCurves(revitGridLines));
-
+                uGrids.AddRange(GenerateCurtainGridCurves(curtainGrid.GetUGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList()));
+                vGrids.AddRange(GenerateCurtainGridCurves(curtainGrid.GetVGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList()));
                 //generate interior mullions
                 interiorMullions.AddRange(GenerateInteriorMullions(revitGridLines));
             }
 
             //add perimeter mullions
-            perimeterMullions.AddRange(MullionFromCurtainGrid(doc,curtainGrid));
+            perimeterMullions.AddRange(GeneratePerimeterMullions(doc, curtainGrid));
+
+            //get profile
+            var curtainWallProfile = GetCurtainWallProfile(curtainWall);
 
             //add panels
             GeneratePanels(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray());
 
-            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, curtainGridLines, interiorMullions, perimeterMullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
+            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids, interiorMullions, perimeterMullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
 
             return new List<Element>() { hyparCurtainWall }.ToArray();
         }
 
         private static Profile GetCurtainWallProfile(ADSK.Wall curtainWall)
         {
+            var doc = curtainWall.Document;
+
+            var normalWall = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Basic);
+
+
+            List<Polygon> polygons = null;
+
+            //to get a curtain wall's profile, we change the type temporarily. #thanksRevit
+            using (ADSK.TransactionGroup t = new ADSK.TransactionGroup(doc, "Temp change wall"))
+            {
+                t.Start();
+                ADSK.Transaction changeWall = new ADSK.Transaction(doc, "Changing wall");
+                changeWall.Start();
+                curtainWall.WallType = normalWall;
+                changeWall.Commit();
+                polygons = curtainWall.GetProfile();
+                t.RollBack();
+            }
+
+
             Polygon outerPolygon = null;
             List<Polygon> voids = new List<Polygon>();
 
-            var polygons = curtainWall.GetProfile();
             if (polygons == null)
             {
                 return null;
@@ -98,21 +120,18 @@ namespace HyparRevitCurtainWallConverter
             return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
         }
 
-        private static ModelCurve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines)
+        private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines)
         {
-            var modelCurves = new List<ModelCurve>();
+            var modelCurves = new List<Curve>();
 
             foreach (var gridline in gridLines)
             {
-                foreach (ADSK.Curve curve in gridline.ExistingSegmentCurves)
-                {
-                    var line = new Line(curve.GetEndPoint(0).ToVector3(true), curve.GetEndPoint(1).ToVector3(true));
-                    modelCurves.Add(new ModelCurve(line));
-                }
+                var line = new Line(gridline.FullCurve.GetEndPoint(0).ToVector3(true), gridline.FullCurve.GetEndPoint(1).ToVector3(true));
+                modelCurves.Add(line);
             }
             return modelCurves.ToArray();
         }
-        private static Mullion[] MullionFromCurtainGrid(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
+        private static Mullion[] GeneratePerimeterMullions(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
         {
             List<Mullion> mullions = new List<Mullion>();
 
@@ -122,7 +141,7 @@ namespace HyparRevitCurtainWallConverter
 
                 var mullion = doc.GetElement(id) as ADSK.Mullion;
 
-                mullions.Add(mullion.ToHyparMullion());
+                mullions.Add(mullion.ToHyparMullion(CurrentWidth));
             }
             return mullions.ToArray();
         }
@@ -149,7 +168,7 @@ namespace HyparRevitCurtainWallConverter
             return mullions.ToArray();
         }
 
-        private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion)
+        private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion, double offset = 0)
         {
             Profile prof = GetMullionProfile(revitMullion);
 
@@ -161,6 +180,14 @@ namespace HyparRevitCurtainWallConverter
             //get the transform from the mullion so we can orient the profile
             var tForm = revitMullion.GetTransform().ToElementsTransform(true);
 
+            //this kinda sucks but it works okay for the perimeter mullions
+            if (offset > 0)
+            {
+                var orig = tForm.YZ().Normal;
+                tForm.Move(orig.X * -offset, orig.Y * -offset, orig.Z * -offset);
+            }
+
+            //transform the profile
             var transProfile = tForm.OfProfile(prof);
 
             //build a sweep with the default profile
@@ -198,7 +225,7 @@ namespace HyparRevitCurtainWallConverter
                 }
 
                 var cell = curtainCells[i];
-                
+
                 try
                 {
                     var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
