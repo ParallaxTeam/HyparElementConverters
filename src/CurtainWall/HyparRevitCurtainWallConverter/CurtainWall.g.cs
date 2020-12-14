@@ -27,19 +27,31 @@ namespace Elements
 	public partial class CurtainWall : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]
-        public CurtainWall(Profile @profile, IList<ModelCurve> @gridlines, IList<Mullion> @mullions, IList<Panel> @spandrelPanels, IList<Panel> @glazedPanels, Transform @transform, Material @material, Representation @representation, bool @isElementDefinition, System.Guid @id, string @name)
+        public CurtainWall(Profile @profile, 
+            IList<ModelCurve> @gridlines, 
+            IList<Mullion> @interiorMullions,
+            IList<Mullion> @perimeterMullions,
+            IList<Panel> @spandrelPanels, 
+            IList<Panel> @glazedPanels, 
+            Transform @transform, 
+            Material @material, 
+            Representation @representation, 
+            bool @isElementDefinition, 
+            System.Guid @id, 
+            string @name)
             : base(transform, material, representation, isElementDefinition, id, name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<CurtainWall>
             ();
             if(validator != null)
             {
-                validator.PreConstruct(new object[]{ @profile, @gridlines, @mullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
+                validator.PreConstruct(new object[]{ @profile, @gridlines, @interiorMullions, @perimeterMullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
             }
         
                 this.Profile = @profile;
                 this.Gridlines = @gridlines;
-                this.Mullions = @mullions;
+                this.InteriorMullions = @interiorMullions;
+                this.PerimeterMullions = @perimeterMullions;
                 this.SpandrelPanels = @spandrelPanels;
                 this.GlazedPanels = @glazedPanels;
             
@@ -57,8 +69,11 @@ namespace Elements
         public IList<ModelCurve> Gridlines { get; set; }
     
         [Newtonsoft.Json.JsonProperty("Mullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public IList<Mullion> Mullions { get; set; }
-    
+        public IList<Mullion> InteriorMullions { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("Mullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public IList<Mullion> PerimeterMullions { get; set; }
+
         /// <summary>Opaque panels in the curtain wall system</summary>
         [Newtonsoft.Json.JsonProperty("Spandrel Panels", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Panel> SpandrelPanels { get; set; }
