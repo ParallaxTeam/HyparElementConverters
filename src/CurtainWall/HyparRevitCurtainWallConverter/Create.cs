@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Autodesk.Revit.DB.Electrical;
 using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
@@ -46,6 +47,8 @@ namespace HyparRevitCurtainWallConverter
             var perimeterMullions = new List<Mullion>();
             var uGrids = new List<Curve>();
             var vGrids = new List<Curve>();
+            var skippedSegments = new List<Curve>();
+
             //right now we are targeting curtain walls with stuff in em
             var curtainGrid = curtainWall.CurtainGrid;
             if (curtainGrid == null)
@@ -61,8 +64,13 @@ namespace HyparRevitCurtainWallConverter
             if (curtainGridLineIds.Any())
             {
                 //generate curtain grid
-                uGrids.AddRange(GenerateCurtainGridCurves(curtainGrid.GetUGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList()));
-                vGrids.AddRange(GenerateCurtainGridCurves(curtainGrid.GetVGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList()));
+                var uGridLines = curtainGrid.GetUGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
+                uGrids.AddRange(GenerateCurtainGridCurves(uGridLines));
+                skippedSegments.AddRange(GenerateCurtainGridCurves(uGridLines,true));
+
+                var vGridLines = curtainGrid.GetVGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
+                vGrids.AddRange(GenerateCurtainGridCurves(vGridLines));
+                skippedSegments.AddRange(GenerateCurtainGridCurves(vGridLines, true));
                 //generate interior mullions
                 interiorMullions.AddRange(GenerateInteriorMullions(revitGridLines));
             }
@@ -76,7 +84,7 @@ namespace HyparRevitCurtainWallConverter
             //add panels
             GeneratePanels(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray());
 
-            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids, interiorMullions, perimeterMullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
+            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids, skippedSegments, interiorMullions, perimeterMullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
 
             return new List<Element>() { hyparCurtainWall }.ToArray();
         }
@@ -87,7 +95,6 @@ namespace HyparRevitCurtainWallConverter
 
             var normalWall = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Basic);
 
-
             List<Polygon> polygons = null;
 
             //to get a curtain wall's profile, we change the type temporarily. #thanksRevit
@@ -96,12 +103,14 @@ namespace HyparRevitCurtainWallConverter
                 t.Start();
                 ADSK.Transaction changeWall = new ADSK.Transaction(doc, "Changing wall");
                 changeWall.Start();
+                //disallow join to get an accurate profile
+                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall,0);
+                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 1);
                 curtainWall.WallType = normalWall;
                 changeWall.Commit();
                 polygons = curtainWall.GetProfile();
                 t.RollBack();
             }
-
 
             Polygon outerPolygon = null;
             List<Polygon> voids = new List<Polygon>();
@@ -120,14 +129,25 @@ namespace HyparRevitCurtainWallConverter
             return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
         }
 
-        private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines)
+        private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines, bool segments = false)
         {
             var modelCurves = new List<Curve>();
 
             foreach (var gridline in gridLines)
             {
-                var line = new Line(gridline.FullCurve.GetEndPoint(0).ToVector3(true), gridline.FullCurve.GetEndPoint(1).ToVector3(true));
-                modelCurves.Add(line);
+                if (segments)
+                {
+                    foreach (ADSK.Curve seg in gridline.SkippedSegmentCurves)
+                    {
+                        var line = new Line(seg.GetEndPoint(0).ToVector3(true), seg.GetEndPoint(1).ToVector3(true));
+                        modelCurves.Add(line);
+                    }
+                }
+                else
+                {
+                    var line = new Line(gridline.FullCurve.GetEndPoint(0).ToVector3(true), gridline.FullCurve.GetEndPoint(1).ToVector3(true));
+                    modelCurves.Add(line);
+                }
             }
             return modelCurves.ToArray();
         }

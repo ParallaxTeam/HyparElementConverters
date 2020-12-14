@@ -30,6 +30,7 @@ namespace Elements
         public CurtainWall(Profile @profile, 
             IList<Curve> @uGrids,
             IList<Curve> @vGrids,
+            IList<Curve> @skippedSegments,
             IList<Mullion> @interiorMullions,
             IList<Mullion> @perimeterMullions,
             IList<Panel> @spandrelPanels, 
@@ -46,12 +47,13 @@ namespace Elements
             ();
             if(validator != null)
             {
-                validator.PreConstruct(new object[]{ @profile, @uGrids, @vGrids, @interiorMullions, @perimeterMullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
+                validator.PreConstruct(new object[]{ @profile, @uGrids, @vGrids, @skippedSegments, @interiorMullions, @perimeterMullions, @spandrelPanels, @glazedPanels, @transform, @material, @representation, @isElementDefinition, @id, @name});
             }
         
                 this.Profile = @profile;
                 this.uGridlines = @uGrids;
                 this.vGridlines = @vGrids;
+                this.SkippedSegments = @skippedSegments;
                 this.InteriorMullions = @interiorMullions;
                 this.PerimeterMullions = @perimeterMullions;
                 this.SpandrelPanels = @spandrelPanels;
@@ -72,6 +74,9 @@ namespace Elements
 
         [Newtonsoft.Json.JsonProperty("vGridlines", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Curve> vGridlines { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("SkippedSegments", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public IList<Curve> SkippedSegments { get; set; }
 
         [Newtonsoft.Json.JsonProperty("InteriorMullions", Required = Newtonsoft.Json.Required.DisallowNull, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public IList<Mullion> InteriorMullions { get; set; }

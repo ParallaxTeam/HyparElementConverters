@@ -7,6 +7,7 @@ using Elements;
 using ADSK = Autodesk.Revit.DB;
 using Elements.Conversion.Revit;
 using Elements.Conversion.Revit.Extensions;
+using Elements.Geometry;
 using Element = Elements.Element;
 
 namespace HyparRevitCurtainWallConverter
@@ -87,8 +88,25 @@ namespace HyparRevitCurtainWallConverter
                 gridLines.Add(newGrid);
                 elementId.Add(newGrid.Id);
             }
-
+            
             doc.Regenerate();
+
+            foreach (var gridLine in gridLines)
+            {
+                foreach (Line crv in hyparCurtainWall.SkippedSegments)
+                {
+                    ADSK.Line ln = ADSK.Line.CreateBound(crv.Start.ToXYZ(true),crv.End.ToXYZ(true));
+
+                    try
+                    {
+                        gridLine.RemoveSegment(ln);
+                    }
+                    catch (Exception)
+                    {
+                        //
+                    }
+                }
+            }
 
             foreach (var gridLine in gridLines)
             {
