@@ -23,17 +23,23 @@ namespace HyparRevitCurtainWallConverter
         {
             var radius = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.CIRC_MULLION_RADIUS)?.AsDouble();
 
-            switch (radius)
+
+            try
             {
-                case null:
-                    var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble();
-                    var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
-                    var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
-                    CurrentWidth = Units.FeetToMeters(side1);
-                    return new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
-                default:
+                if (radius > 0)
+                {
                     CurrentWidth = Units.FeetToMeters(Units.FeetToMeters(radius.Value));
                     return new Profile(new Circle(Units.FeetToMeters(radius.Value)).ToPolygon(10));
+                }
+                var side1 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH1).AsDouble();
+                var side2 = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_WIDTH2).AsDouble();
+                var thickness = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.RECT_MULLION_THICK).AsDouble();
+                CurrentWidth = Units.FeetToMeters(side1);
+                return new Profile(Polygon.Rectangle(Units.FeetToMeters(side1 + side2), Units.FeetToMeters(thickness)));
+            }
+            catch (Exception)
+            {
+                return new Profile(Polygon.Rectangle(Units.FeetToMeters(0.25), Units.FeetToMeters(0.25)));
             }
         }
 
@@ -78,7 +84,7 @@ namespace HyparRevitCurtainWallConverter
             //add perimeter mullions
             perimeterMullions.AddRange(GeneratePerimeterMullions(doc, curtainGrid));
 
-            //get profile
+            //get profile TODO: Fix this. Swapping to regular wall fails often
             var curtainWallProfile = GetCurtainWallProfile(curtainWall);
 
             //add panels
@@ -101,12 +107,19 @@ namespace HyparRevitCurtainWallConverter
             using (ADSK.TransactionGroup t = new ADSK.TransactionGroup(doc, "Temp change wall"))
             {
                 t.Start();
+                
                 ADSK.Transaction changeWall = new ADSK.Transaction(doc, "Changing wall");
                 changeWall.Start();
-                //disallow join to get an accurate profile
-                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall,0);
-                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 1);
+
+               
                 curtainWall.WallType = normalWall;
+                
+                doc.Regenerate();
+
+                //disallow join to get an accurate profile
+                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 0);
+                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 1);
+
                 changeWall.Commit();
                 polygons = curtainWall.GetProfile();
                 t.RollBack();
