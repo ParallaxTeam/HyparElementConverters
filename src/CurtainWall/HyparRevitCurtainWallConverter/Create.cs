@@ -84,7 +84,7 @@ namespace HyparRevitCurtainWallConverter
             //add perimeter mullions
             perimeterMullions.AddRange(GeneratePerimeterMullions(doc, curtainGrid));
 
-            //get profile TODO: Fix this. Swapping to regular wall fails often
+            //get profile
             var curtainWallProfile = GetCurtainWallProfile(curtainWall);
 
             //add panels
@@ -99,47 +99,32 @@ namespace HyparRevitCurtainWallConverter
         {
             var doc = curtainWall.Document;
 
-            var normalWall = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Basic);
 
-            List<Polygon> polygons = null;
+            var modelCurveIds = curtainWall.GetDependentElements(new ADSK.ElementClassFilter(typeof(ADSK.CurveElement)));
 
-            //to get a curtain wall's profile, we change the type temporarily. #thanksRevit
-            using (ADSK.TransactionGroup t = new ADSK.TransactionGroup(doc, "Temp change wall"))
+            if (modelCurveIds.Any())
             {
-                t.Start();
-                
-                ADSK.Transaction changeWall = new ADSK.Transaction(doc, "Changing wall");
-                changeWall.Start();
+                var modelCurves = modelCurveIds.Select(m => doc.GetElement(m)).Cast<ADSK.CurveElement>().ToList();
 
-               
-                curtainWall.WallType = normalWall;
-                
-                doc.Regenerate();
+                var vertices = modelCurves.Select(m => m.GeometryCurve.GetEndPoint(0).ToVector3(true)).ToArray();
 
-                //disallow join to get an accurate profile
-                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 0);
-                ADSK.WallUtils.DisallowWallJoinAtEnd(curtainWall, 1);
-
-                changeWall.Commit();
-                polygons = curtainWall.GetProfile();
-                t.RollBack();
+                return new Profile(new Polygon(vertices));
             }
 
-            Polygon outerPolygon = null;
-            List<Polygon> voids = new List<Polygon>();
+            List<Vector3> verts = new List<Vector3>();
 
-            if (polygons == null)
-            {
-                return null;
-            }
+            var wallLoc = curtainWall.Location as ADSK.LocationCurve;
 
-            outerPolygon = polygons[0];
-            if (polygons.Count > 1)
-            {
-                voids.AddRange(polygons.Skip(1));
-            }
-            //build our profile
-            return new Profile(outerPolygon, voids, Guid.NewGuid(), null);
+            verts.Add(wallLoc.Curve.GetEndPoint(0).ToVector3(true));
+
+            var offsetCurve = wallLoc.Curve
+                .CreateTransformed(new ADSK.Transform(ADSK.Transform.CreateTranslation(new ADSK.XYZ(0,0, curtainWall.LookupParameter("Unconnected Height").AsDouble()))));
+
+            verts.Add(offsetCurve.GetEndPoint(0).ToVector3(true));
+            
+            verts.Add(offsetCurve.GetEndPoint(1).ToVector3(true));
+            verts.Add(wallLoc.Curve.GetEndPoint(1).ToVector3(true));
+            return new Profile(new Polygon(verts));
         }
 
         private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines, bool segments = false)
@@ -262,7 +247,9 @@ namespace HyparRevitCurtainWallConverter
                 try
                 {
                     var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
+                    
                     Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), $"panel-{i}");
+
                     if (isGlassPanel)
                     {
                         GlazedPanels.Add(panel);

@@ -116,5 +116,26 @@ namespace HyparRevitCurtainWallConverter
 
             return list;
         }
+        public static ADSK.XYZ curveDirection(ADSK.Curve c)
+        {
+            ADSK.XYZ xyz = c.GetEndPoint(0);
+            ADSK.XYZ xYZ = c.GetEndPoint(1);
+            ADSK.XYZ xYZ1 = new ADSK.XYZ(xYZ.X - xyz.X, xYZ.Y - xyz.Y, xYZ.Z - xyz.X);
+            return xYZ1;
+        }
+
+        public static ADSK.XYZ curveListNormal(ADSK.Curve[] profile)
+        {
+            ADSK.XYZ zero = ADSK.XYZ.Zero;
+            for (int i = 0; i < (int)profile.Length; i++)
+            {
+                ADSK.Curve curve = profile[i];
+                ADSK.Curve curve1 = profile[(i + 1) % (int)profile.Length];
+                ADSK.XYZ xYZ = curveDirection(curve);
+                ADSK.XYZ xYZ1 = curveDirection(curve1);
+                zero += xYZ.CrossProduct(xYZ1).Normalize();
+            }
+            return zero.Normalize();
+        }
     }
 }
