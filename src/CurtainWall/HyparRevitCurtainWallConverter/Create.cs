@@ -48,8 +48,8 @@ namespace HyparRevitCurtainWallConverter
             var curtainWall = revitElement as Autodesk.Revit.DB.Wall;
 
             //our lists to pack with hypar elements
-            var interiorMullions = new List<Mullion>();
-            var perimeterMullions = new List<Mullion>();
+            var mullions = new List<Mullion>();
+
             var uGrids = new List<Curve>();
             var vGrids = new List<Curve>();
             var skippedSegments = new List<Curve>();
@@ -72,17 +72,15 @@ namespace HyparRevitCurtainWallConverter
                 //generate curtain grid
                 var uGridLines = curtainGrid.GetUGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
                 uGrids.AddRange(GenerateCurtainGridCurves(uGridLines));
-                skippedSegments.AddRange(GenerateCurtainGridCurves(uGridLines,true));
 
                 var vGridLines = curtainGrid.GetVGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
                 vGrids.AddRange(GenerateCurtainGridCurves(vGridLines));
-                skippedSegments.AddRange(GenerateCurtainGridCurves(vGridLines, true));
                 //generate interior mullions
-                interiorMullions.AddRange(GenerateInteriorMullions(revitGridLines));
+                mullions.AddRange(GenerateInteriorMullions(revitGridLines));
             }
 
             //add perimeter mullions
-            perimeterMullions.AddRange(GeneratePerimeterMullions(doc, curtainGrid));
+            mullions.AddRange(GeneratePerimeterMullions(doc, curtainGrid));
 
             //get profile
             var curtainWallProfile = GetCurtainWallProfile(curtainWall);
@@ -90,7 +88,7 @@ namespace HyparRevitCurtainWallConverter
             //add panels
             GeneratePanels(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray());
 
-            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids, skippedSegments, interiorMullions, perimeterMullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
+            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids,  mullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
 
             return new List<Element>() { hyparCurtainWall }.ToArray();
         }
@@ -121,25 +119,14 @@ namespace HyparRevitCurtainWallConverter
             return new Profile(new Polygon(verts));
         }
 
-        private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines, bool segments = false)
+        private static Curve[] GenerateCurtainGridCurves(List<ADSK.CurtainGridLine> gridLines)
         {
             var modelCurves = new List<Curve>();
 
             foreach (var gridline in gridLines)
             {
-                if (segments)
-                {
-                    foreach (ADSK.Curve seg in gridline.SkippedSegmentCurves)
-                    {
-                        var line = new Line(seg.GetEndPoint(0).ToVector3(true), seg.GetEndPoint(1).ToVector3(true));
-                        modelCurves.Add(line);
-                    }
-                }
-                else
-                {
-                    var line = new Line(gridline.FullCurve.GetEndPoint(0).ToVector3(true), gridline.FullCurve.GetEndPoint(1).ToVector3(true));
+                var line = new Line(gridline.FullCurve.GetEndPoint(0).ToVector3(true), gridline.FullCurve.GetEndPoint(1).ToVector3(true));
                     modelCurves.Add(line);
-                }
             }
             return modelCurves.ToArray();
         }
@@ -176,13 +163,13 @@ namespace HyparRevitCurtainWallConverter
 
                     mullions.Add(mullion.ToHyparMullion());
                 }
-                
             }
             return mullions.ToArray();
         }
 
         private static Mullion ToHyparMullion(this ADSK.Mullion revitMullion, double offset = 0)
         {
+            string mullionTypeName = revitMullion.MullionType.Name;
             Profile prof = GetMullionProfile(revitMullion);
 
             ADSK.Line mullionCurve = revitMullion.LocationCurve as ADSK.Line;
@@ -209,8 +196,9 @@ namespace HyparRevitCurtainWallConverter
                 new Extrude(transProfile, centerLine.Length(), centerLine.Direction(), false)
             };
 
-            return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), null);
+            return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), mullionTypeName);
         }
+
         //here we generate spandrel panels and glazed panels
         private static void GeneratePanels(ADSK.CurtainCell[] curtainCells, ADSK.Panel[] revitPanels)
         {
@@ -242,13 +230,14 @@ namespace HyparRevitCurtainWallConverter
 
                 try
                 {
-                    var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
-                    
+                    //var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
+                    var curves = cell.CurveLoops.ToPolyCurves();
+
                     //we serialize data as the name to keep it simple
                     string name = $"{i},{revitPanel.PanelType.Name}";
 
                     Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), name);
-
+                    
                     if (isGlassPanel)
                     {
                         GlazedPanels.Add(panel);
