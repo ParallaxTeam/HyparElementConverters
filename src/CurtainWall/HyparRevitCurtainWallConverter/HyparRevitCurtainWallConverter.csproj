@@ -112,7 +112,6 @@
     <Compile Include="CurtainWall.g.cs" />
     <Compile Include="CurtainWallConverter.cs" />
     <Compile Include="Mullion.g.cs" />
-    <Compile Include="ProcessFailures.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>

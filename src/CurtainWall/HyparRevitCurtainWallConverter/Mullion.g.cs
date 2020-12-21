@@ -33,7 +33,12 @@ namespace Elements
             bool @isElementDefinition, 
             System.Guid @id, 
             string @name)
-            : base(transform, material, representation, isElementDefinition, id, name)
+            : base(transform, 
+                material, 
+                representation, 
+                isElementDefinition, 
+                id, 
+                name)
         {
             var validator = Validator.Instance.GetFirstValidatorForType<Mullion>
             ();

@@ -162,21 +162,28 @@ namespace HyparRevitCurtainWallConverter
                 }
             }
 
-            var panels = wallByProf.CurtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToList();
+            var panels = wallByProf.CurtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).OrderBy(p => p.Transform.Origin).ToList();
 
             //find a solid panel to st the spandrels as.
-            var solidPanel = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Contains("Solid")) as ADSK.PanelType;
             foreach (var spandrelPanel in hyparCurtainWall.SpandrelPanels)
             {
-                var panelId = spandrelPanel.Name.Replace("panel-", "");
+                var panelData = spandrelPanel.Name.Split(',');
 
-                var panelNumber = Convert.ToInt32(panelId);
-                panels[panelNumber].get_Parameter(ADSK.BuiltInParameter.ALL_MODEL_INSTANCE_COMMENTS).Set(panelId);
-                panels[panelNumber].PanelType = solidPanel;
+                var panelNumber = Convert.ToInt32(panelData[0]);
+                var panelToUse = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Equals(panelData[1])) as ADSK.PanelType;
+
+                panels[panelNumber].PanelType = panelToUse;
             }
+            foreach (var glazedPanel in hyparCurtainWall.GlazedPanels)
+            {
+                var panelData = glazedPanel.Name.Split(',');
 
+                var panelNumber = Convert.ToInt32(panelData[0]);
+                var panelToUse = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Equals(panelData[1])) as ADSK.PanelType;
+
+                panels[panelNumber].PanelType = panelToUse;
+            }
             return elementId.ToArray();
         }
-     
     }
 }

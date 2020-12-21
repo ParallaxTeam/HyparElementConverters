@@ -23,7 +23,6 @@ namespace HyparRevitCurtainWallConverter
         {
             var radius = revitMullion.MullionType.get_Parameter(ADSK.BuiltInParameter.CIRC_MULLION_RADIUS)?.AsDouble();
 
-
             try
             {
                 if (radius > 0)
@@ -61,6 +60,7 @@ namespace HyparRevitCurtainWallConverter
             {
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
             }
+
             //get the revit grid lines for use
             var curtainGridLineIds = new List<ADSK.ElementId>();
             curtainGridLineIds.AddRange(curtainGrid.GetUGridLineIds());
@@ -99,10 +99,9 @@ namespace HyparRevitCurtainWallConverter
         {
             var doc = curtainWall.Document;
 
-
             var modelCurveIds = curtainWall.GetDependentElements(new ADSK.ElementClassFilter(typeof(ADSK.CurveElement)));
 
-            if (modelCurveIds.Any())
+            if (modelCurveIds.Any()) // if the wall's profile is edited, just get that
             {
                 var modelCurves = modelCurveIds.Select(m => doc.GetElement(m)).Cast<ADSK.CurveElement>().ToList();
 
@@ -112,18 +111,13 @@ namespace HyparRevitCurtainWallConverter
             }
 
             List<Vector3> verts = new List<Vector3>();
-
             var wallLoc = curtainWall.Location as ADSK.LocationCurve;
-
-            verts.Add(wallLoc.Curve.GetEndPoint(0).ToVector3(true));
-
+            verts.Add(wallLoc.Curve.GetEndPoint(0).ToVector3(true)); //first point - bottom left
             var offsetCurve = wallLoc.Curve
                 .CreateTransformed(new ADSK.Transform(ADSK.Transform.CreateTranslation(new ADSK.XYZ(0,0, curtainWall.LookupParameter("Unconnected Height").AsDouble()))));
-
-            verts.Add(offsetCurve.GetEndPoint(0).ToVector3(true));
-            
-            verts.Add(offsetCurve.GetEndPoint(1).ToVector3(true));
-            verts.Add(wallLoc.Curve.GetEndPoint(1).ToVector3(true));
+            verts.Add(offsetCurve.GetEndPoint(0).ToVector3(true)); //second point - top left
+            verts.Add(offsetCurve.GetEndPoint(1).ToVector3(true)); //third point - top right
+            verts.Add(wallLoc.Curve.GetEndPoint(1).ToVector3(true)); //fourth point - bottom right
             return new Profile(new Polygon(verts));
         }
 
@@ -182,6 +176,7 @@ namespace HyparRevitCurtainWallConverter
 
                     mullions.Add(mullion.ToHyparMullion());
                 }
+                
             }
             return mullions.ToArray();
         }
@@ -219,6 +214,7 @@ namespace HyparRevitCurtainWallConverter
         //here we generate spandrel panels and glazed panels
         private static void GeneratePanels(ADSK.CurtainCell[] curtainCells, ADSK.Panel[] revitPanels)
         {
+            var doc = revitPanels.FirstOrDefault().Document;
             //clear our lists
             GlazedPanels.Clear();
             SpandrelPanels.Clear();
@@ -232,7 +228,7 @@ namespace HyparRevitCurtainWallConverter
                 Material material;
                 try
                 {
-                    var revmaterial = revitPanel.Document.GetElement(revitPanel.Document.GetElement(revitPanel.GetTypeId())
+                    var revmaterial = doc.GetElement(doc.GetElement(revitPanel.GetTypeId())
                         .get_Parameter(ADSK.BuiltInParameter.MATERIAL_ID_PARAM).AsElementId()) as ADSK.Material;
                     material = revmaterial.ToElementsMaterial();
                     isGlassPanel = revmaterial.Transparency > 0;
@@ -248,7 +244,10 @@ namespace HyparRevitCurtainWallConverter
                 {
                     var curves = cell.PlanarizedCurveLoops.ToPolyCurves();
                     
-                    Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), $"panel-{i}");
+                    //we serialize data as the name to keep it simple
+                    string name = $"{i},{revitPanel.PanelType.Name}";
+
+                    Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), name);
 
                     if (isGlassPanel)
                     {
