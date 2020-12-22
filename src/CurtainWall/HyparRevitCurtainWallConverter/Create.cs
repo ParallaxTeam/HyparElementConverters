@@ -110,12 +110,14 @@ namespace HyparRevitCurtainWallConverter
 
             List<Vector3> verts = new List<Vector3>();
             var wallLoc = curtainWall.Location as ADSK.LocationCurve;
-            verts.Add(wallLoc.Curve.GetEndPoint(0).ToVector3(true)); //first point - bottom left
-            var offsetCurve = wallLoc.Curve
+            var baseCurve = wallLoc.Curve.CreateTransformed(new ADSK.Transform(ADSK.Transform.CreateTranslation(new ADSK.XYZ(0, 0,
+                curtainWall.get_Parameter(ADSK.BuiltInParameter.WALL_BASE_OFFSET).AsDouble()))));
+            verts.Add(baseCurve.GetEndPoint(0).ToVector3(true)); //first point - bottom left
+            var offsetCurve = baseCurve
                 .CreateTransformed(new ADSK.Transform(ADSK.Transform.CreateTranslation(new ADSK.XYZ(0,0, curtainWall.LookupParameter("Unconnected Height").AsDouble()))));
             verts.Add(offsetCurve.GetEndPoint(0).ToVector3(true)); //second point - top left
             verts.Add(offsetCurve.GetEndPoint(1).ToVector3(true)); //third point - top right
-            verts.Add(wallLoc.Curve.GetEndPoint(1).ToVector3(true)); //fourth point - bottom right
+            verts.Add(baseCurve.GetEndPoint(1).ToVector3(true)); //fourth point - bottom right
             return new Profile(new Polygon(verts));
         }
 

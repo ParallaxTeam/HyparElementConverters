@@ -54,7 +54,7 @@ namespace HyparRevitCurtainWallConverter
             var hyparCurtainWall = hyparElement as CurtainWall;
 
 
-            bool asRevitElements = hyparCurtainWall.uGridlines.Any() && hyparCurtainWall.vGridlines.Any();
+            bool asRevitElements = hyparCurtainWall.uGridlines.Any() || hyparCurtainWall.vGridlines.Any();
 
             if (!asRevitElements)
             {
@@ -202,11 +202,10 @@ namespace HyparRevitCurtainWallConverter
                 panels[panelNumber].PanelType = panelToUse;
             }
 
-
             return returnElementIds.ToArray();
         }
 
-
+      
 
 
         private static ADSK.ElementId[] DirectShapesFromCurtainWall(CurtainWall hyparCurtainWall, LoadContext context)
