@@ -97,15 +97,14 @@ namespace HyparRevitCurtainWallConverter
         {
             var doc = curtainWall.Document;
 
-            var modelCurveIds = curtainWall.GetDependentElements(new ADSK.ElementClassFilter(typeof(ADSK.CurveElement)));
+            var modelCurveIds = curtainWall.GetDependentElements(new ADSK.ElementClassFilter(typeof(ADSK.Sketch)));
 
             if (modelCurveIds.Any()) // if the wall's profile is edited, just get that
             {
-                var modelCurves = modelCurveIds.Select(m => doc.GetElement(m)).Cast<ADSK.CurveElement>().ToList();
+                var sketch = modelCurveIds.Select(m => doc.GetElement(m)).Cast<ADSK.Sketch>().First();
+                var polys = sketch.Profile.ToPolyCurves().First();
 
-                var vertices = modelCurves.Select(m => m.GeometryCurve.GetEndPoint(0).ToVector3(true)).ToArray();
-
-                return new Profile(new Polygon(vertices));
+                return new Profile(new Polygon(polys.Vertices));
             }
 
             List<Vector3> verts = new List<Vector3>();

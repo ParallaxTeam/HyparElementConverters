@@ -148,39 +148,39 @@ namespace HyparRevitCurtainWallConverter
                 }
             }
 
-            //remove all the segments to start fresh
-            foreach (var g in gridLines)
-            {
-                if (g.AllSegmentCurves.Size == 0)
-                {
-                    continue;
-                }
-                foreach (ADSK.Curve s in g.AllSegmentCurves)
-                {
-                    g.RemoveSegment(s);
-                }
-            }
+            ////remove all the segments to start fresh
+            //foreach (var g in gridLines)
+            //{
+            //    if (g.AllSegmentCurves.Size == 0)
+            //    {
+            //        continue;
+            //    }
+            //    foreach (ADSK.Curve s in g.AllSegmentCurves)
+            //    {
+            //        g.RemoveSegment(s);
+            //    }
+            //}
 
-            //try to add back the lines based on panels
-            const double epsilon = 0.1;
-            foreach (var p in allPanels)
-            {
-                foreach (var s in p.Perimeter.Segments())
-                {
-                    ADSK.Curve curve = s.ToRevitCurve(true);
-                    try
-                    {
-                        var curtainGridLine = gridLines
-                            .First(g => g.FullCurve.Distance(curve.GetEndPoint(0)) < epsilon && g.FullCurve.Distance(curve.GetEndPoint(1)) < epsilon);
+            ////try to add back the lines based on panels
+            //const double epsilon = 0.1;
+            //foreach (var p in allPanels)
+            //{
+            //    foreach (var s in p.Perimeter.Segments())
+            //    {
+            //        ADSK.Curve curve = s.ToRevitCurve(true);
+            //        try
+            //        {
+            //            var curtainGridLine = gridLines
+            //                .First(g => g.FullCurve.Distance(curve.GetEndPoint(0)) < epsilon && g.FullCurve.Distance(curve.GetEndPoint(1)) < epsilon);
 
-                        curtainGridLine.AddSegment(curve);
-                    }
-                    catch (Exception)
-                    {
-                        //suppress for now
-                    }
-                }
-            }
+            //            curtainGridLine.AddSegment(curve);
+            //        }
+            //        catch (Exception)
+            //        {
+            //            //suppress for now
+            //        }
+            //    }
+            //}
 
             //add the mullions
             foreach (var gridLine in gridLines)
@@ -216,7 +216,7 @@ namespace HyparRevitCurtainWallConverter
                 var curves = panel.Perimeter.Segments().Select(s => s.ToRevitCurve(true));
                 var profileLoop = ADSK.CurveLoop.Create(curves.ToList());
                 var profileLoops = new List<ADSK.CurveLoop> { profileLoop };
-                var solid = ADSK.GeometryCreationUtilities.CreateExtrusionGeometry(profileLoops, panel.Normal().ToXYZ(true), 1);
+                var solid = ADSK.GeometryCreationUtilities.CreateExtrusionGeometry(profileLoops, panel.Normal().ToXYZ(true), 0.125);
 
                 var elemId = new ADSK.ElementId(ADSK.BuiltInCategory.OST_CurtainWallPanels);
                 var ds = ADSK.DirectShape.CreateElement(context.Document, elemId);
