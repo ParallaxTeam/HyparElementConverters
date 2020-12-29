@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <img src="./documentation/repoLogo.jpg" alt="ARCAT Tools" width="300">
+  <img src="./documentation/repoLogo.jpg" alt="HYPAR Converters" width="300">
   <br>
   Hypar Converters
   <br>
@@ -11,6 +11,7 @@
 <p align="center">
   <a href="#repository-information">Repository Information</a> •
   <a href="#how-to-use">How To Use</a> •
+   <a href="#known-issues">Known Issues</a> •
   <a href="#contact">Contact</a> 
 </p>
 
@@ -28,8 +29,16 @@ This repository houses code for Hypar converters for Revit developmed by Paralla
 * [Download Latest Release](https://github.com/ParallaxTeam/HyparElementConverters/releases)
     - download latest release and put in the "Converters" folder.
 
+## Known Issues
+- HYPAR to Revit
+  - Perimeter mullions are not able to be added at this time. This is due to the Revit API not having methods for this.
+  - Mullion types - at this time default rectangular mullions ad circular mullions are supported. We need to add support for corner mullions and mullions with custom profiles.
+
 ## Contact
 * [ParallaxTeam](http://www.parallaxteam.com/)
   - Custom converter development provided by Parallax Team.
 * [HYPAR](https://hypar.io/)
     - awesome people making awesome tools
+
+## Current Results
+ <img src="./documentation/20201229-currentStatus.png" alt="ARCAT Tools" width="800">
