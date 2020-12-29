@@ -33,6 +33,7 @@ This repository houses code for Hypar converters for Revit developmed by Paralla
 - HYPAR to Revit
   - Perimeter mullions are not able to be added at this time. This is due to the Revit API not having methods for this.
   - Mullion types - at this time default rectangular mullions ad circular mullions are supported. We need to add support for corner mullions and mullions with custom profiles.
+  - Door panels _(family instances)_ - at this time the import will not set panel types for non-panel element types. _E.g. A door would become a HYPAR spandrel panel_.
 
 ## Contact
 * [ParallaxTeam](http://www.parallaxteam.com/)
