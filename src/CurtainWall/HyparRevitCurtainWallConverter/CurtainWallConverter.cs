@@ -53,15 +53,7 @@ namespace HyparRevitCurtainWallConverter
             var doc = context.Document;
             var hyparCurtainWall = hyparElement as CurtainWall;
 
-
-            bool asRevitElements = hyparCurtainWall.uGridlines.Any() || hyparCurtainWall.vGridlines.Any();
-
-            if (!asRevitElements)
-            {
-                return DirectShapesFromCurtainWall(hyparCurtainWall, context);
-            }
-
-
+            
             //our default types for now TODO: Relate this somehow to the actual types
             var firstCurtainWallType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Curtain);
             var mullionType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.MullionType))
@@ -148,40 +140,28 @@ namespace HyparRevitCurtainWallConverter
                 }
             }
 
-            ////remove all the segments to start fresh
-            //foreach (var g in gridLines)
-            //{
-            //    if (g.AllSegmentCurves.Size == 0)
-            //    {
-            //        continue;
-            //    }
-            //    foreach (ADSK.Curve s in g.AllSegmentCurves)
-            //    {
-            //        g.RemoveSegment(s);
-            //    }
-            //}
+            const double epsilon = 0.1;
+            //remove segments
+            if (hyparCurtainWall.SkippedSegments.Any())
+            {
+                foreach (Line skippedSegment in hyparCurtainWall.SkippedSegments)
+                {
+                    ADSK.Curve curve = skippedSegment.ToRevitCurve(true);
+                    try
+                    {
+                        var curtainGridLine = gridLines
+                            .First(g => g.FullCurve.Distance(curve.GetEndPoint(0)) < epsilon && g.FullCurve.Distance(curve.GetEndPoint(1)) < epsilon);
 
-            ////try to add back the lines based on panels
-            //const double epsilon = 0.1;
-            //foreach (var p in allPanels)
-            //{
-            //    foreach (var s in p.Perimeter.Segments())
-            //    {
-            //        ADSK.Curve curve = s.ToRevitCurve(true);
-            //        try
-            //        {
-            //            var curtainGridLine = gridLines
-            //                .First(g => g.FullCurve.Distance(curve.GetEndPoint(0)) < epsilon && g.FullCurve.Distance(curve.GetEndPoint(1)) < epsilon);
+                        curtainGridLine.RemoveSegment(curve);
+                    }
+                    catch (Exception)
+                    {
+                        //suppress for now
+                    }
+                }
+            }
 
-            //            curtainGridLine.AddSegment(curve);
-            //        }
-            //        catch (Exception)
-            //        {
-            //            //suppress for now
-            //        }
-            //    }
-            //}
-
+            doc.Regenerate();
             //add the mullions
             foreach (var gridLine in gridLines)
             {
@@ -197,15 +177,22 @@ namespace HyparRevitCurtainWallConverter
             foreach (var panel in allPanels)
             {
                 var panelData = panel.Name.Split(',');
-                var panelNumber = Convert.ToInt32(panelData[0]);
-                var panelToUse = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Equals(panelData[1])) as ADSK.PanelType;
-                panels[panelNumber].PanelType = panelToUse;
+                try
+                {
+                    var panelNumber = Convert.ToInt32(panelData[0]);
+                    var panelToUse = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Equals(panelData[1])) as ADSK.PanelType;
+                    panels[panelNumber].PanelType = panelToUse;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+
             }
 
             return returnElementIds.ToArray();
         }
-
-      
 
 
         private static ADSK.ElementId[] DirectShapesFromCurtainWall(CurtainWall hyparCurtainWall, LoadContext context)
@@ -221,7 +208,7 @@ namespace HyparRevitCurtainWallConverter
                 var elemId = new ADSK.ElementId(ADSK.BuiltInCategory.OST_CurtainWallPanels);
                 var ds = ADSK.DirectShape.CreateElement(context.Document, elemId);
                 ds.SetShape(new[] { solid }, ADSK.DirectShapeTargetViewType.Default);
-                
+
                 newStuff.Add(elemId);
             }
 

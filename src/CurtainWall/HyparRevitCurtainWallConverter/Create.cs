@@ -14,8 +14,7 @@ namespace HyparRevitCurtainWallConverter
     public static class Create
     {
         public static List<ADSK.ElementId> InteriorMullionIds = new List<ADSK.ElementId>();
-        public static List<Panel> GlazedPanels = new List<Panel>();
-        public static List<Panel> SpandrelPanels = new List<Panel>();
+
         private static double CurrentWidth { get; set; } = 0;
         private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
 
@@ -49,13 +48,14 @@ namespace HyparRevitCurtainWallConverter
 
             //our lists to pack with hypar elements
             var mullions = new List<Mullion>();
-
             var uGrids = new List<Curve>();
             var vGrids = new List<Curve>();
             var skippedSegments = new List<Curve>();
+            var glazedPanels = new List<Panel>();
+            var spandrelPanels = new List<Panel>();
 
-            //right now we are targeting curtain walls with stuff in em
-            var curtainGrid = curtainWall.CurtainGrid;
+        //right now we are targeting curtain walls with stuff in em
+        var curtainGrid = curtainWall.CurtainGrid;
             if (curtainGrid == null)
             {
                 throw new InvalidOperationException("This curtain wall does not have a grid. Curtain walls with no grid are not supported at this time.");
@@ -75,6 +75,9 @@ namespace HyparRevitCurtainWallConverter
 
                 var vGridLines = curtainGrid.GetVGridLineIds().Select(id => doc.GetElement(id) as ADSK.CurtainGridLine).ToList();
                 vGrids.AddRange(GenerateCurtainGridCurves(vGridLines));
+
+                skippedSegments.AddRange(GenerateSkippedSegments(uGridLines,vGridLines));
+               
                 //generate interior mullions
                 mullions.AddRange(GenerateInteriorMullions(revitGridLines));
             }
@@ -86,9 +89,13 @@ namespace HyparRevitCurtainWallConverter
             var curtainWallProfile = GetCurtainWallProfile(curtainWall);
 
             //add panels
-            GeneratePanels(curtainGrid.GetCurtainCells().ToArray(), curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray());
+            var allpanels = GeneratePanels(curtainGrid.GetCurtainCells().ToArray(),
+                curtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToArray());
 
-            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids,  mullions, SpandrelPanels, GlazedPanels, null, null, null, false, Guid.NewGuid(), "");
+            glazedPanels.AddRange(allpanels.Where(p => p.Name.ToLower().Contains("true")));
+            spandrelPanels.AddRange(allpanels.Where(p => p.Name.ToLower().Contains("false")));
+
+            CurtainWall hyparCurtainWall = new CurtainWall(curtainWallProfile, uGrids, vGrids, skippedSegments, mullions, spandrelPanels, glazedPanels, null, null, null, false, Guid.NewGuid(), "");
 
             return new List<Element>() { hyparCurtainWall }.ToArray();
         }
@@ -131,6 +138,25 @@ namespace HyparRevitCurtainWallConverter
             }
             return modelCurves.ToArray();
         }
+
+        private static Curve[] GenerateSkippedSegments(List<ADSK.CurtainGridLine> uGridLines,
+            List<ADSK.CurtainGridLine> vGridLines)
+        {
+            List<Curve> skipped = new List<Curve>();
+
+            uGridLines.AddRange(vGridLines);
+
+            foreach (var gridLine in uGridLines)
+            {
+                foreach (ADSK.Curve seg in gridLine.SkippedSegmentCurves)
+                {
+                    skipped.Add(new Line(seg.GetEndPoint(0).ToVector3(true), seg.GetEndPoint(1).ToVector3(true)));
+                }
+            }
+
+            return skipped.ToArray();
+        }
+
         private static Mullion[] GeneratePerimeterMullions(ADSK.Document doc, ADSK.CurtainGrid curtainGrid)
         {
             List<Mullion> mullions = new List<Mullion>();
@@ -201,12 +227,10 @@ namespace HyparRevitCurtainWallConverter
         }
 
         //here we generate spandrel panels and glazed panels
-        private static void GeneratePanels(ADSK.CurtainCell[] curtainCells, ADSK.Panel[] revitPanels)
+        private static List<Panel> GeneratePanels(ADSK.CurtainCell[] curtainCells, ADSK.Panel[] revitPanels)
         {
+            var panels = new List<Panel>();
             var doc = revitPanels.FirstOrDefault().Document;
-            //clear our lists
-            GlazedPanels.Clear();
-            SpandrelPanels.Clear();
 
             for (int i = 0; i < curtainCells.Length; i++)
             {
@@ -214,7 +238,7 @@ namespace HyparRevitCurtainWallConverter
 
                 bool isGlassPanel = true;
 
-                Material material;
+                Material material = BuiltInMaterials.Glass;
                 try
                 {
                     var revmaterial = doc.GetElement(doc.GetElement(revitPanel.GetTypeId())
@@ -235,24 +259,18 @@ namespace HyparRevitCurtainWallConverter
                     var curves = cell.CurveLoops.ToPolyCurves();
 
                     //we serialize data as the name to keep it simple
-                    string name = $"{i},{revitPanel.PanelType.Name}";
+                    string name = $"{i},{revitPanel.PanelType.Name},{isGlassPanel}";
 
-                    Panel panel = new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), name);
+                    panels.Add(new Panel(new Polygon(curves.First().Vertices), material, null, null, false, Guid.NewGuid(), name));
                     
-                    if (isGlassPanel)
-                    {
-                        GlazedPanels.Add(panel);
-                    }
-                    else
-                    {
-                        SpandrelPanels.Add(panel);
-                    }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     //suppress for now
                 }
             }
+
+            return panels;
         }
     }
 }
