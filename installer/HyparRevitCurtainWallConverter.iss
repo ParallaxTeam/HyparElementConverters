@@ -1,9 +1,9 @@
 #define MyAppName "HYPAR Converters by Parallax Team"
-#define MyAppVersion "2020.12.3"
+#define MyAppVersion "2021.1.1"
 #define MyAppPublisher "ParallaxTeam"
 #define MyAppURL "https://github.com/ParallaxTeam/HyparElementConverters"
 
-#define HyparConverterFolder "{%USERPROFILE}\.hypar\converters"
+#define HyparConverterFolder "{%USERPROFILE}\.hypar\converters\revit"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
