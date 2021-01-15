@@ -43,7 +43,8 @@ namespace HyparRevitRoofConverter
 
         private static Element[] HyparRoofFromRevitRoof(ADSK.Element revitRoof)
         {
-            var level = revitRoof.Document.GetElement(revitRoof.LevelId) as ADSK.Level;
+            ADSK.Document doc = revitRoof.Document;
+            var level = doc.GetElement(revitRoof.LevelId) as ADSK.Level;
             double levelElevation = level.Elevation;
             double baseOffset = revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).AsDouble();
 
@@ -52,74 +53,69 @@ namespace HyparRevitRoofConverter
             double thickness = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM).AsDouble());
             double area = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.HOST_AREA_COMPUTED).AsDouble());
 
-            Mesh underside = new Mesh();
+
             Mesh topside = new Mesh();
+            Mesh underside = new Mesh();
+
             Mesh envelope = new Mesh();
+
             Polygon outerPerimeter = null;
             if (revitRoof is ADSK.FootPrintRoof footprintRoof)
             {
                 highPoint = Units.FeetToMeters(footprintRoof.get_Parameter(ADSK.BuiltInParameter.ACTUAL_MAX_RIDGE_HEIGHT_PARAM)
                     .AsDouble());
 
-                var bottomFaceReferences = ADSK.HostObjectUtils.GetBottomFaces(footprintRoof);
-                var bottomFaces = bottomFaceReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
-                foreach (ADSK.Face face in bottomFaces)
+                #region Topside
+                var topReferences = ADSK.HostObjectUtils.GetTopFaces(footprintRoof);
+                var topFaces = topReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
+                foreach (var face in topFaces)
                 {
-                    var revitMesh = face.Triangulate(1);
-                    foreach (var v in revitMesh.Vertices)
+                    var currentRevitMesh = face.Triangulate();
+
+                    for (int i = 0; i < currentRevitMesh.NumTriangles; i++)
                     {
-                        Vertex vertex = new Vertex(v.ToVector3(true));
-                        underside.AddVertex(vertex);
+                        var revitTriangle = currentRevitMesh.get_Triangle(i);
+
+                        Triangle tri = new Triangle(
+                            revitTriangle.get_Vertex(0).ToElementsVertex(),
+                            revitTriangle.get_Vertex(1).ToElementsVertex(),
+                            revitTriangle.get_Vertex(2).ToElementsVertex()
+                        );
+                        topside.AddTriangle(tri);
                     }
                 }
+                topside.ComputeNormals();
+                #endregion
 
-                var topFaceReferences = ADSK.HostObjectUtils.GetTopFaces(footprintRoof);
-                var topFaces = topFaceReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
-                foreach (ADSK.Face face in topFaces)
+                #region bottom
+                var bottomReferences = ADSK.HostObjectUtils.GetBottomFaces(footprintRoof);
+                var bottomFaces = bottomReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
+                foreach (var face in bottomFaces)
                 {
-                    var revitMesh = face.Triangulate(1);
-                    foreach (var v in revitMesh.Vertices)
+                    var currentRevitMesh = face.Triangulate();
+
+                    for (int i = 0; i < currentRevitMesh.NumTriangles; i++)
                     {
-                        Vertex vertex = new Vertex(v.ToVector3(true));
-                        topside.AddVertex(vertex);
+                        var revitTriangle = currentRevitMesh.get_Triangle(i);
+                        
+                        Triangle tri = new Triangle(
+                            revitTriangle.get_Vertex(0).ToElementsVertex(),
+                            revitTriangle.get_Vertex(1).ToElementsVertex(),
+                            revitTriangle.get_Vertex(2).ToElementsVertex()
+                        );
+                        underside.AddTriangle(tri);
                     }
                 }
-
-
-                var perimeter = topside.EdgesPerimeters().First();
-                var ePoints = new List<Vector3>();
-                perimeter.ForEach(e => ePoints.AddRange(e.Points()));
-                ePoints = ePoints.Distinct().ToList();
-                var uPoints = new List<Vector3>();
-                ePoints.ForEach(p => uPoints.Add(new Vector3(p.X, p.Y, elevation)));
-
-                // Use the topSide Mesh's edgePoints and the lower Mesh's underPoints
-                // to construct a series of triangles forming the sides of the Roof.
-                var sideTriangles = new List<Elements.Geometry.Triangle>();
-                for (var i = 0; i < ePoints.Count; i++)
-                {
-                    sideTriangles.Add(
-                        new Elements.Geometry.Triangle(new Vertex(ePoints[i]),
-                            new Vertex(uPoints[i]),
-                            new Vertex(uPoints[(i + 1) % uPoints.Count])));
-                    sideTriangles.Add(
-                        new Elements.Geometry.Triangle(new Vertex(ePoints[i]),
-                            new Vertex(uPoints[(i + 1) % uPoints.Count]),
-                            new Vertex(ePoints[(i + 1) % ePoints.Count])));
-                }
-
-                envelope.AddTriangles(sideTriangles.ToList());
-                envelope.ComputeNormals();
-                outerPerimeter = ToPolygon(footprintRoof.GetProfiles()).First();
+                underside.ComputeNormals();
+                #endregion
 
             }
 
-            //topside.ComputeNormals();
-            //underside.ComputeNormals();
-           
-            Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black,null,false, Guid.NewGuid(),"Roof");
 
-            return new List<Element>() { hyparRoof }.ToArray();
+
+            //Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black,null,false, Guid.NewGuid(),"Roof");
+
+            return new List<Element>() { new MeshElement(topside, BuiltInMaterials.Concrete), new MeshElement(underside,BuiltInMaterials.Concrete) }.ToArray();
         }
 
         
