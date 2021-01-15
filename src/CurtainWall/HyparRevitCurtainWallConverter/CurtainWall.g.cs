@@ -7,7 +7,7 @@ using Elements;
 using Elements.GeoJSON;
 using Elements.Geometry;
 using Elements.Geometry.Solids;
-using Elements.Properties;
+//using Elements.Properties;
 using Elements.Validators;
 using Elements.Serialization.JSON;
 using System;
@@ -23,7 +23,7 @@ namespace Elements
     /// <summary>A curtain wall system</summary>
     [Newtonsoft.Json.JsonConverter(typeof(Elements.Serialization.JSON.JsonInheritanceConverter), "discriminator")]
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.1.21.0 (Newtonsoft.Json v12.0.0.0)")]
-    [UserElement]
+    //[UserElement]
 	public partial class CurtainWall : GeometricElement
     {
         [Newtonsoft.Json.JsonConstructor]

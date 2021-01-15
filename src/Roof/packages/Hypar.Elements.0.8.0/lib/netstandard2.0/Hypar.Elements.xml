@@ -706,7 +706,7 @@
         </member>
         <member name="M:Elements.GeoJSON.Polygon.ToPolygons">
             <summary>
-            Convert the coordinate array to a collection of polygons.
+            Convert the coordinate array to a collection of polylines.
             The last position of the polygon is dropped.
             </summary>
             <returns></returns>
@@ -915,40 +915,6 @@
             </summary>
             <returns>The center of the bounding box.</returns>
         </member>
-        <member name="M:Elements.Geometry.BBox3.Equals(System.Object)">
-            <summary>
-            Is the provided object a bounding box? If so, is it
-            equal to this bounding box within Epsilon?
-            </summary>
-            <param name="obj"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Elements.Geometry.BBox3.GetHashCode">
-            <summary>
-            Get the hash code for the bounding box.
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Elements.Geometry.BBox3.ToString">
-            <summary>
-            The string representation of the bounding box.
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Elements.Geometry.BBox3.op_Equality(Elements.Geometry.BBox3,Elements.Geometry.BBox3)">
-            <summary>
-            Are the two bounding boxes equal within Epsilon?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
-        <member name="M:Elements.Geometry.BBox3.op_Inequality(Elements.Geometry.BBox3,Elements.Geometry.BBox3)">
-            <summary>
-            Are the two bounding boxes not equal within Epsilon?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
         <member name="T:Elements.Geometry.Color">
             <summary>A color with red, green, blue, and alpha components.</summary>
             <summary>
@@ -1031,20 +997,6 @@
             <param name="a">The first color.</param>
             <param name="b">The second color.</param>
         </member>
-        <member name="M:Elements.Geometry.Color.op_Equality(Elements.Geometry.Color,Elements.Geometry.Color)">
-            <summary>
-            Are the two Colors equal?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
-        <member name="M:Elements.Geometry.Color.op_Inequality(Elements.Geometry.Color,Elements.Geometry.Color)">
-            <summary>
-            Are the two Colors equal?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
         <member name="T:Elements.Geometry.Curve">
             <summary>The abstract base class for all curves.</summary>
         </member>
@@ -1106,11 +1058,11 @@
             </summary>
             <param name="transform">The transform to apply.</param>
         </member>
-        <member name="M:Elements.Geometry.Curve.op_Implicit(Elements.Geometry.Curve)~Elements.ModelCurve">
-            <summary>
-            Implicitly convert a curve to a ModelCurve Element.
-            </summary>
-            <param name="c">The curve to convert.</param>
+        <member name="T:Elements.Geometry.Geometry">
+            <summary>The base class for all geometry</summary>
+        </member>
+        <member name="P:Elements.Geometry.Geometry.Material">
+            <summary>The material for this piece of geometry.</summary>
         </member>
         <member name="T:Elements.Geometry.Line">
             <summary>A line between two points. The line is parameterized from 0.0(start) to 1.0(end)</summary>
@@ -1517,10 +1469,10 @@
             <summary>A triangulated mesh.</summary>
         </member>
         <member name="P:Elements.Geometry.Mesh.Vertices">
-            <summary>The mesh' vertices.</summary>
+            <summary>The vertices of the mesh.</summary>
         </member>
         <member name="P:Elements.Geometry.Mesh.Triangles">
-            <summary>The mesh' triangles.</summary>
+            <summary>The triangles of the mesh</summary>
         </member>
         <member name="M:Elements.Geometry.Mesh.#ctor">
             <summary>
@@ -1552,7 +1504,7 @@
             Get all buffers required for rendering.
             </summary>
         </member>
-        <member name="M:Elements.Geometry.Mesh.AddTriangle(Elements.Geometry.Vertex,Elements.Geometry.Vertex,Elements.Geometry.Vertex)">
+        <member name="M:Elements.Geometry.Mesh.AddTriangle(Elements.Geometry.Solids.Vertex,Elements.Geometry.Solids.Vertex,Elements.Geometry.Solids.Vertex)">
             <summary>
             Add a triangle to the mesh.
             </summary>
@@ -1576,7 +1528,7 @@
             <param name="uv">The texture coordinate of the vertex.</param>
             <returns>The newly created vertex.</returns>
         </member>
-        <member name="M:Elements.Geometry.Mesh.AddVertex(Elements.Geometry.Vertex)">
+        <member name="M:Elements.Geometry.Mesh.AddVertex(Elements.Geometry.Solids.Vertex)">
             <summary>
             Add a vertex to the mesh.
             </summary>
@@ -1654,12 +1606,6 @@
             Implicitly convert a polygon to a profile.
             </summary>
             <param name="p">The polygon to convert.</param>
-        </member>
-        <member name="M:Elements.Geometry.Polygon.op_Implicit(Elements.Geometry.Polygon)~Elements.Element">
-            <summary>
-            Implicitly convert a Polygon to a ModelCurve Element.
-            </summary>
-            <param name="c">The curve to convert.</param>
         </member>
         <member name="M:Elements.Geometry.Polygon.TransformedPolygon(Elements.Geometry.Transform)">
             <summary>
@@ -1820,14 +1766,13 @@
             Returns null if the Polygons do not intersect.
             </returns>
         </member>
-        <member name="M:Elements.Geometry.Polygon.BooleanTwoSets(System.Collections.Generic.IList{Elements.Geometry.Polygon},System.Collections.Generic.IList{Elements.Geometry.Polygon},Elements.Geometry.BooleanMode,Elements.Geometry.VoidTreatment,System.Double)">
+        <member name="M:Elements.Geometry.Polygon.BooleanTwoSets(System.Collections.Generic.IList{Elements.Geometry.Polygon},System.Collections.Generic.IList{Elements.Geometry.Polygon},Elements.Geometry.BooleanMode,System.Double)">
             <summary>
             Apply a boolean operation (Union, Difference, Intersection, or XOr) to two lists of Polygons.
             </summary>
             <param name="subjectPolygons">Polygons to clip</param>
             <param name="clippingPolygons">Polygons with which to clip</param>
-            <param name="booleanMode">The operation to apply: Union, Difference, Intersection, or XOr</param>
-            <param name="voidTreatment">Optional setting for how to process the polygons in each set: either treat polygons inside others as voids, or treat them all as solid (thereby ignoring internal polygons).</param>
+            <param name="mode">The operation to apply: Union, Difference, Intersection, or XOr</param>
             <param name="tolerance">Optional override of the tolerance for determining if two polygons are identical.</param>
         </member>
         <member name="M:Elements.Geometry.Polygon.Difference(Elements.Geometry.Polygon,System.Double)">
@@ -2010,13 +1955,6 @@
             </summary>
             <returns>The unitized sum of the cross products of each pair of edges.</returns>
         </member>
-        <member name="M:Elements.Geometry.Polygon.NormalsAtVertices">
-            <summary>
-            Get the normal of each vertex on the polygon.
-            </summary>
-            <remarks>All normals will be the same since polygons are coplanar by definition.</remarks>
-            <returns>A collection of unit vectors, each corresponding to a single vertex.</returns>
-        </member>
         <member name="M:Elements.Geometry.Polygon.RenderVertices">
             <summary>
             A list of vertices describing the arc for rendering.
@@ -2075,9 +2013,9 @@
             <returns></returns>
         </member>
         <member name="T:Elements.Geometry.Polyline">
-            <summary>A continuous set of lines.</summary>
+            <summary>A planar continuous set of lines.</summary>
             <summary>
-            A continuous set of lines.
+            A coplanar continuous set of lines.
             </summary>
             <example>
             [!code-csharp[Main](../../Elements/test/PolylineTests.cs?name=example)]
@@ -2145,12 +2083,6 @@
             </summary>
             <param name="transform">The transform to apply.</param>
         </member>
-        <member name="M:Elements.Geometry.Polyline.NormalsAtVertices">
-            <summary>
-            Get the normal of each vertex on the polyline.
-            </summary>
-            <returns>A collection of unit vectors, each corresponding to a single vertex.</returns>
-        </member>
         <member name="M:Elements.Geometry.Polyline.Frames(System.Double,System.Double)">
             <summary>
             Get the transforms used to transform a Profile extruded along this Polyline.
@@ -2168,6 +2100,12 @@
             Compute the Plane defined by the first three non-collinear vertices of the Polygon.
             </summary>
             <returns>A Plane.</returns>
+        </member>
+        <member name="M:Elements.Geometry.Polyline.Normal">
+            <summary>
+            The normal of this polyline, according to Newell's Method.
+            </summary>
+            <returns>The unitized sum of the cross products of each pair of edges.</returns>
         </member>
         <member name="M:Elements.Geometry.Polyline.RenderVertices">
             <summary>
@@ -2191,11 +2129,6 @@
             </summary>
             <param name="t">The transform representing the plane of the polygon.</param>
             <param name="segments"></param>
-        </member>
-        <member name="M:Elements.Geometry.Polyline.CreateMiterTransform(System.Int32,Elements.Geometry.Vector3,Elements.Geometry.Vector3)">
-            <summary>
-            Generates a transform that expresses the plane of a miter join at a point on the curve.
-            </summary>
         </member>
         <member name="M:Elements.Geometry.Polyline.PointAtInternal(System.Double,System.Int32@)">
             <summary>
@@ -2378,8 +2311,66 @@
         <member name="P:Elements.Geometry.Solids.Sweep.EndSetback">
             <summary>The amount to set back the resulting solid from the end of the curve.</summary>
         </member>
-        <member name="P:Elements.Geometry.Solids.Sweep.ProfileRotation">
-            <summary>The rotation of the profile around the sweep's curve.</summary>
+        <member name="T:Elements.Geometry.Solids.Vertex">
+            <summary>A mesh vertex.</summary>
+            <summary>
+            A Solid Vertex.
+            </summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Position">
+            <summary>The position of the vertex.</summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Normal">
+            <summary>The vertex's normal.</summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Color">
+            <summary>The vertex's color.</summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Index">
+            <summary>The index of the vertex within a mesh.</summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.UV">
+            <summary>The texture coordinate of the vertex</summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Triangles">
+            <summary>
+            The triangles which contain this vertex.
+            </summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Id">
+            <summary>
+            The Id of the Vertex.
+            </summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.HalfEdge">
+            <summary>
+            The HalfEdge which has this Vertex as its start.
+            </summary>
+        </member>
+        <member name="P:Elements.Geometry.Solids.Vertex.Point">
+            <summary>
+            The location of the Vertex.
+            </summary>
+        </member>
+        <member name="M:Elements.Geometry.Solids.Vertex.#ctor(System.Int64,Elements.Geometry.Vector3)">
+            <summary>
+            Construct a Vertex.
+            </summary>
+            <param name="id"></param>
+            <param name="point">The location of the Vertex.</param>
+        </member>
+        <member name="M:Elements.Geometry.Solids.Vertex.ToString">
+            <summary>
+            Get the string representation of the Vertex.
+            </summary>
+        </member>
+        <member name="M:Elements.Geometry.Solids.Vertex.#ctor(Elements.Geometry.Vector3,System.Nullable{Elements.Geometry.Vector3},Elements.Geometry.Color)">
+            <summary>
+            Create a vertex.
+            </summary>
+            <param name="position">The position of the vertex.</param>
+            <param name="normal">The vertex's normal.</param>
+            <param name="color">The vertex's color.</param>
         </member>
         <member name="T:Elements.Geometry.Solids.Edge">
             <summary>
@@ -2694,38 +2685,6 @@
             <param name="loop"></param>
             <param name="face"></param>
         </member>
-        <member name="T:Elements.Geometry.Solids.Vertex">
-            <summary>
-            A Solid Vertex.
-            </summary>
-        </member>
-        <member name="P:Elements.Geometry.Solids.Vertex.Id">
-            <summary>
-            The Id of the Vertex.
-            </summary>
-        </member>
-        <member name="P:Elements.Geometry.Solids.Vertex.HalfEdge">
-            <summary>
-            The HalfEdge which has this Vertex as its start.
-            </summary>
-        </member>
-        <member name="P:Elements.Geometry.Solids.Vertex.Point">
-            <summary>
-            The location of the Vertex.
-            </summary>
-        </member>
-        <member name="M:Elements.Geometry.Solids.Vertex.#ctor(System.Int64,Elements.Geometry.Vector3)">
-            <summary>
-            Construct a Vertex.
-            </summary>
-            <param name="id"></param>
-            <param name="point">The location of the Vertex.</param>
-        </member>
-        <member name="M:Elements.Geometry.Solids.Vertex.ToString">
-            <summary>
-            Get the string representation of the Vertex.
-            </summary>
-        </member>
         <member name="T:Elements.Geometry.Transform">
             <summary>A right-handed coordinate system with +Z up.</summary>
             <summary>
@@ -3017,7 +2976,7 @@
         <member name="P:Elements.Geometry.Triangle.Normal">
             <summary>The triangle's normal.</summary>
         </member>
-        <member name="M:Elements.Geometry.Triangle.#ctor(Elements.Geometry.Vertex,Elements.Geometry.Vertex,Elements.Geometry.Vertex)">
+        <member name="M:Elements.Geometry.Triangle.#ctor(Elements.Geometry.Solids.Vertex,Elements.Geometry.Solids.Vertex,Elements.Geometry.Solids.Vertex)">
             <summary>
             Create a triangle.
             </summary>
@@ -3038,37 +2997,6 @@
         </member>
         <member name="P:Elements.Geometry.UV.V">
             <summary>The V coordinate.</summary>
-        </member>
-        <member name="M:Elements.Geometry.UV.Equals(System.Object)">
-            <summary>
-            Are the two uvs equal?
-            </summary>
-            <param name="obj"></param>
-        </member>
-        <member name="M:Elements.Geometry.UV.op_Equality(Elements.Geometry.UV,Elements.Geometry.UV)">
-            <summary>
-            Are the two UVs equal?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
-        <member name="M:Elements.Geometry.UV.op_Inequality(Elements.Geometry.UV,Elements.Geometry.UV)">
-            <summary>
-            Are the two UVs equal?
-            </summary>
-            <param name="a"></param>
-            <param name="b"></param>
-        </member>
-        <member name="M:Elements.Geometry.UV.GetHashCode">
-            <summary>
-            Get the hash code for the uv.
-            </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Elements.Geometry.UV.ToString">
-            <summary>
-            A string representation of the uv.
-            </summary>
         </member>
         <member name="T:Elements.Geometry.Vector3">
             <summary>A 3D vector.</summary>
@@ -3100,6 +3028,7 @@
             <summary>
             Get the hash code for the vector.
             </summary>
+            <returns></returns>
         </member>
         <member name="P:Elements.Geometry.Vector3.XAxis">
             <summary>
@@ -3342,7 +3271,7 @@
         </member>
         <member name="M:Elements.Geometry.Vector3.IsAlmostEqualTo(Elements.Geometry.Vector3)">
             <summary>
-            Determine whether this vector's components are equal to those of v, within Epsilon.
+            Determine whether this vector's components are equal to those of v, within tolerance.
             </summary>
             <param name="v">The vector to compare.</param>
             <returns>True if the difference of this vector and the supplied vector's components are all within Tolerance, otherwise false.</returns>
@@ -3384,13 +3313,6 @@
             <param name="other">The vector to test.</param>
             <returns>Returns true if all components of the two vectors are within Epsilon, otherwise false.</returns>
         </member>
-        <member name="M:Elements.Geometry.Vector3.Equals(System.Object)">
-            <summary>
-            Is this vector equal to the provided vector?
-            </summary>
-            <param name="other">The vector to test.</param>
-            <returns>Returns true if all components of the two vectors are within Epsilon, otherwise false.</returns>
-        </member>
         <member name="M:Elements.Geometry.Vector3.IsNaN">
             <summary>
             Are any components of this vector NaN?
@@ -3426,35 +3348,6 @@
             <param name="b">The second point.</param>
             <param name="c">The third point.</param>
             <returns>Greater than 0 if the points are CCW, less than 0 if they are CW, and 0 if they are colinear.</returns>
-        </member>
-        <member name="T:Elements.Geometry.Vertex">
-            <summary>A mesh vertex.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.Position">
-            <summary>The vertex's position.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.Normal">
-            <summary>The vertex's normal.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.Color">
-            <summary>The vertex's color.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.Index">
-            <summary>The index of the vertex within a mesh.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.UV">
-            <summary>The vertex's texture coordinate.</summary>
-        </member>
-        <member name="P:Elements.Geometry.Vertex.Triangles">
-            <summary>The triangles associated with this vertex.</summary>
-        </member>
-        <member name="M:Elements.Geometry.Vertex.#ctor(Elements.Geometry.Vector3,System.Nullable{Elements.Geometry.Vector3},Elements.Geometry.Color)">
-            <summary>
-            Create a vertex.
-            </summary>
-            <param name="position">The position of the vertex.</param>
-            <param name="normal">The vertex's normal.</param>
-            <param name="color">The vertex's color.</param>
         </member>
         <member name="T:Elements.Geometry.FrameType">
             <summary>
@@ -3601,7 +3494,7 @@
             Create a polygon through a set of points along the arc.
             </summary>
             <param name="divisions">The number of divisions of the arc.</param>
-            <returns>A polygon.</returns>
+            <returns>A polyline.</returns>
         </member>
         <member name="T:Elements.Geometry.Colors">
             <summary>
@@ -3936,23 +3829,6 @@
             Exclusive or — either A or B but not both. 
             </summary>
         </member>
-        <member name="T:Elements.Geometry.VoidTreatment">
-            <summary>
-            Controls the handling of internal regions in a polygon boolean operation.
-            </summary>
-        </member>
-        <member name="F:Elements.Geometry.VoidTreatment.PreserveInternalVoids">
-            <summary>
-            Use an Even/Odd fill pattern to decide whether internal polygons are solid or void.
-            This corresponds to Clipper's "EvenOdd" PolyFillType. 
-            </summary>
-        </member>
-        <member name="F:Elements.Geometry.VoidTreatment.IgnoreInternalVoids">
-            <summary>
-            Treat all contained or overlapping polygons as solid.
-            This corresponds to Clipper's "Positive" PolyFillType. 
-            </summary>
-        </member>
         <member name="T:Elements.Geometry.PolygonExtensions">
             <summary>
             Polygon extension methods.
@@ -3986,12 +3862,6 @@
             <param name="p"></param>
             <param name="tolerance">An optional tolerance. If converting back to a Polyline, be sure to use the same tolerance.</param>
             <returns></returns>
-        </member>
-        <member name="M:Elements.Geometry.PolylineExtensions.ToPolyline(Elements.Geometry.Line)">
-            <summary>
-            Convert a line to a polyline
-            </summary>
-            <param name="l">The line to convert.</param>
         </member>
         <member name="T:Elements.Geometry.EndType">
             <summary>
@@ -4455,6 +4325,15 @@
             <param name="json">The JSON representing the model.</param>
             <param name="errors">A collection of deserialization errors.</param>
         </member>
+        <member name="T:Elements.Properties.NumericProperty">
+            <summary>A property with a numeric value.</summary>
+        </member>
+        <member name="P:Elements.Properties.NumericProperty.Value">
+            <summary>The property's value</summary>
+        </member>
+        <member name="P:Elements.Properties.NumericProperty.UnitType">
+            <summary>The property's unit type.</summary>
+        </member>
         <member name="T:Elements.WallByProfile">
             <summary>A wall drawn using the elevation profile</summary>
         </member>
@@ -4844,7 +4723,7 @@
         </member>
         <member name="M:Elements.Serialization.glTF.GltfExtensions.ToGlTF(Elements.Model,System.String,System.Boolean,System.Boolean)">
             <summary>
-            Serialize the model to a gltf file on disk.
+            Save a model to gltf.
             If there is no geometry, an empty GLTF will still be produced.
             </summary>
             <param name="model">The model to serialize.</param>
@@ -4852,18 +4731,11 @@
             <param name="useBinarySerialization">Should binary serialization be used?</param>
             <param name="drawEdges">Should the solid edges be written to the gltf?</param>
         </member>
-        <member name="M:Elements.Serialization.glTF.GltfExtensions.ToGlTF(Elements.Model)">
-            <summary>
-            Serialize the model to a byte array.
-            </summary>
-            <param name="model">The model to serialize.</param>
-            <returns>A byte array representing the model.</returns>
-        </member>
         <member name="M:Elements.Serialization.glTF.GltfExtensions.ToBase64String(Elements.Model,System.Boolean)">
             <summary>
-            Serialize the model to a base64 encoded string.
+            Convert the Model to a base64 encoded string.
             </summary>
-            <returns>A Base64 string representing the model.</returns>
+            <returns>A Base64 string representing the Model.</returns>
         </member>
         <member name="M:Elements.Serialization.glTF.GltfExtensions.SaveGlb(Elements.Model,System.String,System.Boolean)">
             <returns>Whether a Glb was successfully saved. False indicates that there was no geometry to save.</returns>
@@ -4876,25 +4748,27 @@
             Returns the index of the mesh created while processing the Geometry.
             </summary>
         </member>
-        <member name="M:Elements.Serialization.JSON.JsonInheritanceConverter.BuildAppDomainTypeCache">
+        <member name="T:Elements.Serialization.JSON.JsonInheritanceAttribute">
             <summary>
-            The type cache needs to contains all types that will have a discriminator.
-            This includes base types, like elements, and all derived types like Wall.
-            We use reflection to find all public types available in the app domain
-            that have a Newtonsoft.Json.JsonConverterAttribute whose converter type is the 
-            Elements.Serialization.JSON.JsonInheritanceConverter.
-            </summary>
-            <returns>A dictionary containing all found types keyed by their full name.</returns>
-        </member>
-        <member name="M:Elements.Serialization.JSON.JsonInheritanceConverter.RefreshAppDomainTypeCache">
-            <summary>
-            Call this method after assemblies have been loaded into the app
-            domain to ensure that the converter's cache is up to date.
+            The attribute used to store classes that inherit from this class and 
+            make that information availabe during de/serialization.
             </summary>
         </member>
-        <member name="T:Elements.Serialization.JSON.MeshConverter">
+        <member name="M:Elements.Serialization.JSON.JsonInheritanceAttribute.#ctor(System.String,System.Type)">
             <summary>
-            Triangle converter.
+            Construct the attribute from a string key and the type.
+            </summary>
+            <param name="key">The discriminator of the type being de/serialized.</param>
+            <param name="type">The type to pair with the key.</param>
+        </member>
+        <member name="P:Elements.Serialization.JSON.JsonInheritanceAttribute.Key">
+            <summary>
+            The key (discriminator) of the type that inherits from this class.
+            </summary>
+        </member>
+        <member name="P:Elements.Serialization.JSON.JsonInheritanceAttribute.Type">
+            <summary>
+            The type that inherits from this class with the given key.
             </summary>
         </member>
         <member name="T:Elements.Serialization.JSON.SolidConverter">
@@ -5075,12 +4949,6 @@
             </summary>
             <param name="point"></param>
         </member>
-        <member name="M:Elements.Spatial.Grid1d.ClosestPosition(Elements.Geometry.Vector3)">
-            <summary>
-            Get the position along the grid's domain closest to a supplied point.
-            </summary>
-            <param name="point"></param>
-        </member>
         <member name="M:Elements.Spatial.Grid1d.SplitAtPoints(System.Collections.Generic.IEnumerable{Elements.Geometry.Vector3})">
             <summary>
             Split the grid at points in world space. Note that for curved grids an approximate
@@ -5101,13 +4969,6 @@
             </summary>
             <param name="targetLength">The approximate length by which to divide the grid.</param>
             <param name="divisionMode">Whether to permit any size cell, or only larger or smaller cells by rounding up or down.</param>
-        </member>
-        <member name="M:Elements.Spatial.Grid1d.DivideByFixedLengthFromPoint(System.Double,Elements.Geometry.Vector3)">
-            <summary>
-            Divide a grid by constant length subdivisions, starting from a point location. 
-            </summary>
-            <param name="length">The length of subdivisions</param>
-            <param name="point">The point at which to begin subdividing.</param>
         </member>
         <member name="M:Elements.Spatial.Grid1d.DivideByFixedLengthFromPosition(System.Double,System.Double)">
             <summary>
@@ -5464,18 +5325,11 @@
             A flat list of all the top-level cells in this grid. To get child cells as well, use Grid2d.GetCells() instead.
             </summary>
         </member>
-        <member name="M:Elements.Spatial.Grid2d.GetCellNodes">
-            <summary>
-            Get the points at the corners of all grid cells.
-            /// </summary>
-            <returns></returns>
-        </member>
-        <member name="M:Elements.Spatial.Grid2d.GetCellSeparators(Elements.Spatial.GridDirection,System.Boolean)">
+        <member name="M:Elements.Spatial.Grid2d.GetCellSeparators(Elements.Spatial.GridDirection)">
             <summary>
             Get the top-level lines separating cells from one another.
             </summary>
             <param name="direction">The grid direction in which you want to get separators. </param>
-            <param name="trim">Whether or not to trim cell separators with the trimmed cell boundary</param>
             <returns>The lines between cells, running parallel to the grid direction selected. </returns>
         </member>
         <member name="M:Elements.Spatial.Grid2d.GetCells">
@@ -5996,6 +5850,11 @@
         <member name="F:Elements.Units.UnitType.Volume">
             <summary>
             Volume
+            </summary>
+        </member>
+        <member name="T:Elements.UserElement">
+            <summary>
+            An attribute which defines an element as a user-defined element type.
             </summary>
         </member>
         <member name="T:Elements.Validators.IValidator">

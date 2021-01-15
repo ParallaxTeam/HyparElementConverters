@@ -119,6 +119,9 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Textures\UV.jpg" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if not exist "$(HomePath)\.hypar\converters\revit\$(ProjectName)" mkdir "$(HomePath)\.hypar\converters\revit\$(ProjectName)"

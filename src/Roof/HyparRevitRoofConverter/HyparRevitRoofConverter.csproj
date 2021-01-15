@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Csg, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.0.8.1\lib\netstandard2.0\Csg.dll</HintPath>
+      <HintPath>..\packages\Hypar.Elements.0.8.0\lib\netstandard2.0\Csg.dll</HintPath>
     </Reference>
     <Reference Include="Elements.Conversion.Revit, Version=0.2.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.2.1\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
@@ -42,8 +42,8 @@
       <HintPath>..\packages\glTF2Loader.1.1.3-alpha\lib\net35\glTFLoader.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hypar.Elements, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.0.8.1\lib\netstandard2.0\Hypar.Elements.dll</HintPath>
+    <Reference Include="Hypar.Elements, Version=0.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Hypar.Elements.0.8.0\lib\netstandard2.0\Hypar.Elements.dll</HintPath>
     </Reference>
     <Reference Include="LibTessDotNet, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Unofficial.LibTessDotNet.2.0.0\lib\netstandard2.0\LibTessDotNet.dll</HintPath>
@@ -120,4 +120,9 @@
     <Content Include="UV.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if not exist "$(HomePath)\.hypar\converters\revit\$(ProjectName)" mkdir "$(HomePath)\.hypar\converters\revit\$(ProjectName)"
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).dll" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"
+copy "$(ProjectDir)$(OutputPath)$(ProjectName).pdb" "$(HomePath)\.hypar\converters\revit\$(ProjectName)"</PostBuildEvent>
+  </PropertyGroup>
 </Project>
