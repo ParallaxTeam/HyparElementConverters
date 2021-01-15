@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Elements;
 using Elements.Conversion.Revit;
+using Elements.Geometry;
 using ADSK = Autodesk.Revit.DB;
 
 
@@ -39,7 +40,19 @@ namespace HyparRevitRoofConverter
 
         private static Element[] HyparRoofFromRevitRoof(ADSK.Element revitRoof)
         {
+            if (revitRoof is ADSK.FootPrintRoof footprintRoof)
+            {
+                var bottomFaceReferences = ADSK.HostObjectUtils.GetBottomFaces(footprintRoof);
 
+                var bottomFaces = bottomFaceReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
+
+
+
+                Mesh mesh = new Mesh();
+
+            }
+
+            return new Element[]{};
         }
     }
 }
