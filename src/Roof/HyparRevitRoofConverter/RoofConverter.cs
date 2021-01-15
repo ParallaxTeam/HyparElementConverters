@@ -17,7 +17,9 @@ namespace HyparRevitRoofConverter
 
         public ADSK.FilteredElementCollector AddElementFilters(ADSK.FilteredElementCollector collector)
         {
-            throw new NotImplementedException();
+            //allows us to exclude in place roofs.
+            ADSK.ElementClassFilter classFilter = new ADSK.ElementClassFilter(typeof(ADSK.FamilyInstance), true);
+            return collector.OfCategory(ADSK.BuiltInCategory.OST_Roofs).WherePasses(classFilter);
         }
 
         public Element[] FromRevit(ADSK.Element revitElement, ADSK.Document document)
@@ -35,5 +37,9 @@ namespace HyparRevitRoofConverter
             throw new NotImplementedException();
         }
 
+        private static Element[] HyparRoofFromRevitRoof(ADSK.Element revitRoof)
+        {
+
+        }
     }
 }
