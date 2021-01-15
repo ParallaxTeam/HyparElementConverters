@@ -38,6 +38,9 @@
       <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.2.1\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="GeometryEx, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\GeometryEx.8.0.0\lib\netstandard2.0\GeometryEx.dll</HintPath>
+    </Reference>
     <Reference Include="glTFLoader, Version=1.1.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\glTF2Loader.1.1.3-alpha\lib\net35\glTFLoader.dll</HintPath>
       <Private>False</Private>
