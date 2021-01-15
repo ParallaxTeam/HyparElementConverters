@@ -1,0 +1,392 @@
+{
+  "Transform": {
+    "Matrix": {
+      "Components": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ]
+    }
+  },
+  "Elements": {
+    "e7492160-3d9c-4fde-83a9-618abd381169": {
+      "discriminator": "Elements.Material",
+      "Color": {
+        "Red": 0.5,
+        "Green": 0.5,
+        "Blue": 0.5,
+        "Alpha": 1.0
+      },
+      "SpecularFactor": 0.0,
+      "GlossinessFactor": 0.0,
+      "Unlit": false,
+      "DoubleSided": false,
+      "Id": "e7492160-3d9c-4fde-83a9-618abd381169",
+      "Name": "concrete"
+    },
+    "54529a3a-64b8-4685-b850-738d52e450ab": {
+      "discriminator": "Elements.MeshElement",
+      "Transform": {
+        "Matrix": {
+          "Components": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      },
+      "Material": "e7492160-3d9c-4fde-83a9-618abd381169",
+      "Representation": null,
+      "IsElementDefinition": false,
+      "Id": "54529a3a-64b8-4685-b850-738d52e450ab",
+      "Name": null
+    },
+    "20b26951-abf6-4e2c-8399-f4329d8a4984": {
+      "discriminator": "Elements.Roof",
+      "Envelope": {
+        "triangles": [
+          {
+            "vertexIndices": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "vertexIndices": [
+              0,
+              3,
+              1
+            ]
+          },
+          {
+            "vertexIndices": [
+              4,
+              5,
+              6
+            ]
+          },
+          {
+            "vertexIndices": [
+              6,
+              7,
+              4
+            ]
+          },
+          {
+            "vertexIndices": [
+              1,
+              6,
+              5
+            ]
+          },
+          {
+            "vertexIndices": [
+              1,
+              5,
+              2
+            ]
+          },
+          {
+            "vertexIndices": [
+              2,
+              5,
+              4
+            ]
+          },
+          {
+            "vertexIndices": [
+              2,
+              4,
+              0
+            ]
+          },
+          {
+            "vertexIndices": [
+              0,
+              4,
+              7
+            ]
+          },
+          {
+            "vertexIndices": [
+              0,
+              7,
+              3
+            ]
+          },
+          {
+            "vertexIndices": [
+              3,
+              7,
+              6
+            ]
+          },
+          {
+            "vertexIndices": [
+              3,
+              6,
+              1
+            ]
+          }
+        ],
+        "vertices": [
+          {
+            "index": 0,
+            "isBoundary": false,
+            "position": {
+              "X": 4.805798344114283,
+              "Y": 59.75998529576911,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 1,
+            "isBoundary": false,
+            "position": {
+              "X": -44.09622216866717,
+              "Y": 37.44686918908306,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 2,
+            "isBoundary": false,
+            "position": {
+              "X": 0.9342284384163975,
+              "Y": 6.0959830366732675,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 3,
+            "isBoundary": false,
+            "position": {
+              "X": -49.60357942578469,
+              "Y": 127.11746775514922,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 4,
+            "isBoundary": false,
+            "position": {
+              "X": 4.805798344114283,
+              "Y": 59.75998529576911,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 5,
+            "isBoundary": false,
+            "position": {
+              "X": 0.9342284384163975,
+              "Y": 6.0959830366732675,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 6,
+            "isBoundary": false,
+            "position": {
+              "X": -44.09622216866717,
+              "Y": 37.44686918908306,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 7,
+            "isBoundary": false,
+            "position": {
+              "X": -49.60357942578469,
+              "Y": 127.11746775514922,
+              "Z": -0.2
+            }
+          }
+        ]
+      },
+      "Topside": {
+        "triangles": [
+          {
+            "vertexIndices": [
+              2,
+              0,
+              1
+            ]
+          },
+          {
+            "vertexIndices": [
+              2,
+              3,
+              0
+            ]
+          }
+        ],
+        "vertices": [
+          {
+            "index": 0,
+            "isBoundary": true,
+            "position": {
+              "X": -44.09622216866717,
+              "Y": 37.44686918908306,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 1,
+            "isBoundary": true,
+            "position": {
+              "X": 0.9342284384163975,
+              "Y": 6.0959830366732675,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 2,
+            "isBoundary": true,
+            "position": {
+              "X": 4.805798344114283,
+              "Y": 59.75998529576911,
+              "Z": 0.0
+            }
+          },
+          {
+            "index": 3,
+            "isBoundary": true,
+            "position": {
+              "X": -49.60357942578469,
+              "Y": 127.11746775514922,
+              "Z": 0.0
+            }
+          }
+        ]
+      },
+      "Underside": {
+        "triangles": [
+          {
+            "vertexIndices": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "vertexIndices": [
+              2,
+              3,
+              0
+            ]
+          }
+        ],
+        "vertices": [
+          {
+            "index": 0,
+            "isBoundary": true,
+            "position": {
+              "X": 4.805798344114283,
+              "Y": 59.75998529576911,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 1,
+            "isBoundary": true,
+            "position": {
+              "X": 0.9342284384163975,
+              "Y": 6.0959830366732675,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 2,
+            "isBoundary": true,
+            "position": {
+              "X": -44.09622216866717,
+              "Y": 37.44686918908306,
+              "Z": -0.2
+            }
+          },
+          {
+            "index": 3,
+            "isBoundary": true,
+            "position": {
+              "X": -49.60357942578469,
+              "Y": 127.11746775514922,
+              "Z": -0.2
+            }
+          }
+        ]
+      },
+      "Perimeter": {
+        "discriminator": "Elements.Geometry.Polygon",
+        "Vertices": [
+          {
+            "X": -44.09622216866717,
+            "Y": 37.44686918908306,
+            "Z": -0.2
+          },
+          {
+            "X": 0.9342284384163975,
+            "Y": 6.0959830366732675,
+            "Z": -0.2
+          },
+          {
+            "X": 4.805798344114283,
+            "Y": 59.75998529576911,
+            "Z": -0.2
+          },
+          {
+            "X": -49.60357942578469,
+            "Y": 127.11746775514922,
+            "Z": -0.2
+          }
+        ]
+      },
+      "Elevation": -0.2,
+      "Highpoint": 0.0,
+      "Thickness": 0.2,
+      "Area": 3522.925551420744,
+      "Transform": {
+        "Matrix": {
+          "Components": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ]
+        }
+      },
+      "Material": "e7492160-3d9c-4fde-83a9-618abd381169",
+      "Representation": null,
+      "IsElementDefinition": false,
+      "Id": "20b26951-abf6-4e2c-8399-f4329d8a4984",
+      "Name": "Roof"
+    }
+  }
+}
