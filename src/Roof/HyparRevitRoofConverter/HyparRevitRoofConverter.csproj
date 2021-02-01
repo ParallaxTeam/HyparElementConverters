@@ -126,6 +126,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Create.cs" />
     <Compile Include="Roof.g.cs" />
     <Compile Include="RoofConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

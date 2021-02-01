@@ -46,79 +46,90 @@ namespace HyparRevitRoofConverter
 
         private static Element[] HyparRoofFromRevitRoof(ADSK.Element revitRoof)
         {
-            ADSK.Document doc = revitRoof.Document;
-            var level = doc.GetElement(revitRoof.LevelId) as ADSK.Level;
-            double levelElevation = level.Elevation;
-            double baseOffset = revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).AsDouble();
+            var returnList = new List<Element>();
 
-            double elevation = Units.FeetToMeters(levelElevation + baseOffset);
+            ADSK.Document doc = revitRoof.Document;
+            double levelElevation = 0;
+            
+
+            
+
+            double elevation = 0;
             double highPoint = 0;
             double thickness = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM).AsDouble());
             double area = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.HOST_AREA_COMPUTED).AsDouble());
 
-
-            Mesh topside = new Mesh();
-            Mesh underside = new Mesh();
+            Mesh topside = null;
+            Mesh underside = null;
             Mesh envelope = new Mesh();
-            
             Polygon outerPerimeter = null;
 
             if (revitRoof is ADSK.FootPrintRoof footprintRoof)
             {
+                var level = doc.GetElement(revitRoof.LevelId) as ADSK.Level;
+                levelElevation = level.Elevation;
+                double baseOffset = revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_LEVEL_OFFSET_PARAM).AsDouble();
+                elevation = Units.FeetToMeters(levelElevation + baseOffset);
                 highPoint = Units.FeetToMeters(footprintRoof.get_Parameter(ADSK.BuiltInParameter.ACTUAL_MAX_RIDGE_HEIGHT_PARAM)
                     .AsDouble());
 
-                #region Topside
+                //create topside
                 var topReferences = ADSK.HostObjectUtils.GetTopFaces(footprintRoof);
-                var topFaces = topReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
-                foreach (ADSK.PlanarFace face in topFaces)
-                {
-                    //get outer curve loop
-                    var outerLoop = face.GetEdgesAsCurveLoops().First();
+                var topFaces = topReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).ToList();
+                topside = Create.FacesToMesh(topFaces);
 
-                    var vertices = outerLoop.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList();
-
-                    var currentMesh = new Polygon(vertices).ToMesh();
-
-                    topside.AddTriangles(currentMesh.Triangles.ToList());
-                }
-
-                topside.ComputeNormals();
-                #endregion
-
-                #region bottom
+                //create underside
                 var bottomReferences = ADSK.HostObjectUtils.GetBottomFaces(footprintRoof);
-                var bottomFaces = bottomReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).Cast<Autodesk.Revit.DB.Face>().ToList();
-                foreach (ADSK.PlanarFace face in bottomFaces)
-                {
-                    //get outer curve loop
-                    var outerLoop = face.GetEdgesAsCurveLoops().First();
-
-                    var vertices = outerLoop.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList();
-
-                    var currentMesh = new Polygon(vertices).ToMesh();
-
-                    topside.AddTriangles(currentMesh.Triangles.ToList());
-                }
-                underside.ComputeNormals();
-                
-                #endregion
+                var bottomFaces = bottomReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).ToList();
+                underside = Create.FacesToMesh(bottomFaces);
 
                 outerPerimeter = ToPolygon(footprintRoof.GetProfiles()).First();
             }
 
+            if (revitRoof is ADSK.ExtrusionRoof extrusionRoof)
+            {
+                var topfaces = new List<ADSK.GeometryObject>{};
+                var bottomFaces = new List<ADSK.GeometryObject> { };
+                var geoElement = extrusionRoof.get_Geometry(new ADSK.Options());
 
-            var returnList = new List<Element>();
+                foreach (var geoObj in geoElement)
+                {
+                    if (geoObj is ADSK.Solid solid)
+                    {
+                        foreach (ADSK.Face face in solid.Faces)
+                        {
+                            var normal = face.ComputeNormal(new ADSK.UV(0.5, 0.5));
+                            if (normal.Z > 0)
+                            {
+                                topfaces.Add(face);
+                            }
 
-            //envelope = MakeEnvelope(doc);
+                            if (normal.Z < 0)
+                            {
+                                bottomFaces.Add(face);
+                            }
+                        }
+                        
+                    }
+                }
 
-            Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black,null,false, Guid.NewGuid(),"Roof");
+                topside = Create.FacesToMesh(topfaces);
+                underside = Create.FacesToMesh(bottomFaces);
+                //outerPerimeter = underside.PolygonBoundary();
+            }
+
+           envelope = Create.BuildEnvelope(outerPerimeter, thickness);
 
 
-            returnList.Add(new MeshElement(topside));
-            returnList.Add(new MeshElement(underside));
-            returnList.Add(new MeshElement(envelope));
-            returnList.Add(hyparRoof);
+          
+
+
+            Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black, null, false, Guid.NewGuid(), "Roof");
+
+            returnList.Add(new MeshElement(topside, BuiltInMaterials.Concrete));
+            returnList.Add(new MeshElement(underside, BuiltInMaterials.Concrete));
+            returnList.Add(new MeshElement(envelope, BuiltInMaterials.Black));
+            //returnList.Add(hyparRoof);
 
             return returnList.ToArray();
         }
@@ -137,13 +148,21 @@ namespace HyparRevitRoofConverter
             foreach (var face in faces)
             {
                 //get outer curve loop
-                var outerLoop = face.GetEdgesAsCurveLoops().First();
+                var currentMesh = face.Triangulate(1);
+                for (int i = 0; i < currentMesh.NumTriangles; i++)
+                {
+                    var tri = currentMesh.get_Triangle(i);
 
-                var vertices = outerLoop.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList();
+                    var index0 = new Vertex(tri.get_Vertex(0).ToVector3(true));
+                    var index1 = new Vertex(tri.get_Vertex(1).ToVector3(true));
+                    var index2 = new Vertex(tri.get_Vertex(2).ToVector3(true));
 
-                var currentMesh = new Polygon(vertices).ToMesh(true);
+                    envelope.AddVertex(index0);
+                    envelope.AddVertex(index1);
+                    envelope.AddVertex(index2);
 
-                envelope.AddTriangles(currentMesh.Triangles.ToList());
+                    envelope.AddTriangle(index0, index1, index2);
+                }
             }
             envelope.ComputeNormals();
             return envelope;
@@ -163,41 +182,12 @@ namespace HyparRevitRoofConverter
                     vertices.Add(curve.GeometryCurve.GetEndPoint(0).ToVector3(true));
 
                 var polycurve = new Polygon(vertices);
-               
-                list[index++] = polycurve;
-            }
-
-            return list;
-        }
-        private static Polygon[] ToPolygon(ADSK.EdgeArrayArray value)
-        {
-            var count = value.Size;
-            var list = new Polygon[count];
-
-            int index = 0;
-            foreach (var edgeArray in value.Cast<ADSK.EdgeArray>())
-            {
-                List<Vector3> vertices = new List<Vector3>();
-
-                foreach (var curve in edgeArray.Cast<ADSK.Edge>())
-                    vertices.Add(curve.AsCurve().GetEndPoint(0).ToVector3(true));
-
-                var polycurve = new Polygon(vertices);
 
                 list[index++] = polycurve;
             }
 
             return list;
         }
-        public static List<List<T>> Chunk<T>(IEnumerable<T> data, int size)
-        {
-            return data
-                .Select((x, i) => new { Index = i, Value = x })
-                .GroupBy(x => x.Index / size)
-                .Select(x => x.Select(v => v.Value).ToList())
-                .ToList();
-        }
-
-
+ 
     }
 }
