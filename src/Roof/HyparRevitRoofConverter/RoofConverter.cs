@@ -59,7 +59,7 @@ namespace HyparRevitRoofConverter
             Mesh topside = new Mesh();
             Mesh underside = new Mesh();
             Mesh envelope = new Mesh();
-
+            
             Polygon outerPerimeter = null;
             if (revitRoof is ADSK.FootPrintRoof footprintRoof)
             {
@@ -76,16 +76,16 @@ namespace HyparRevitRoofConverter
                     for (int i = 0; i < currentRevitMesh.NumTriangles; i++)
                     {
                         var revitTriangle = currentRevitMesh.get_Triangle(i);
-
-                        Triangle tri = new Triangle(
-                            new Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
-                            new Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
-                            new Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
+                        
+                        Triangle tri = new Triangle(new Elements.Geometry.Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
+                            new Elements.Geometry.Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
+                            new Elements.Geometry.Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
                         );
                         topside.AddTriangle(tri);
+                        tri.Vertices.Select(v => topside.AddVertex(v));
                     }
                 }
-                //topside.ComputeNormals();
+                topside.ComputeNormals();
                 #endregion
 
                 #region bottom
@@ -100,20 +100,23 @@ namespace HyparRevitRoofConverter
                         var revitTriangle = currentRevitMesh.get_Triangle(i);
                         
                         Triangle tri = new Triangle(
-                            new Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
-                            new Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
-                            new Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
+                            new Elements.Geometry.Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
+                            new Elements.Geometry.Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
+                            new Elements.Geometry.Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
                         );
                         underside.AddTriangle(tri);
                     }
                 }
-                //underside.ComputeNormals();
+                underside.ComputeNormals();
+                
                 #endregion
 
                 outerPerimeter = ToPolygon(footprintRoof.GetProfiles()).First();
             }
 
             envelope = MakeEnvelope(doc);
+
+
 
             Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black,null,false, Guid.NewGuid(),"Roof");
 
@@ -140,9 +143,9 @@ namespace HyparRevitRoofConverter
                     var revitTriangle = currentRevitMesh.get_Triangle(i);
 
                     Triangle tri = new Triangle(
-                        new Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
-                        new Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
-                        new Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
+                        new Elements.Geometry.Vertex(revitTriangle.get_Vertex(0).ToVector3(true)),
+                        new Elements.Geometry.Vertex(revitTriangle.get_Vertex(1).ToVector3(true)),
+                        new Elements.Geometry.Vertex(revitTriangle.get_Vertex(2).ToVector3(true))
                     );
                     envelope.AddTriangle(tri);
                 }
