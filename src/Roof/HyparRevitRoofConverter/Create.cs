@@ -43,6 +43,31 @@ namespace HyparRevitRoofConverter
             return mesh;
         }
 
+        public static Mesh BuildEnvelope(Mesh topSide, Mesh underSide)
+        {
+            Mesh mesh = new Mesh();
+
+            foreach (var v in topSide.Vertices)
+            {
+                mesh.AddVertex(v);
+            }
+            foreach (var t in topSide.Triangles)
+            {
+                mesh.AddTriangle(t);
+            }
+            foreach (var v in underSide.Vertices)
+            {
+                mesh.AddVertex(v);
+            }
+            foreach (var t in underSide.Triangles)
+            {
+                mesh.AddTriangle(t);
+            }
+            mesh.ComputeNormals();
+
+            return mesh;
+        }
+
         public static Mesh BuildEnvelope(Polygon polygon, double thickness)
         {
             Mesh mesh = new Mesh();
