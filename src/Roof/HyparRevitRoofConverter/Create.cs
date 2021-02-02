@@ -19,8 +19,8 @@ namespace HyparRevitRoofConverter
 
                 if (geo is ADSK.Face face)
                 {
-                    //get outer curve loop
-                    var currentMesh = face.Triangulate(1);
+                    //convert the face to a mesh. if it is a conical face, we use a lower precision
+                    var currentMesh = face is ADSK.ConicalFace ? face.Triangulate(0.25) : face.Triangulate(1); ;
 
                     for (int i = 0; i < currentMesh.NumTriangles; i++)
                     {
@@ -42,7 +42,7 @@ namespace HyparRevitRoofConverter
 
             return mesh;
         }
-        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.FootPrintRoof roof)
+        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.Element roof)
         {
             var faces = new List<ADSK.GeometryObject>();
             var geoElement = roof.get_Geometry(new ADSK.Options());
@@ -60,81 +60,42 @@ namespace HyparRevitRoofConverter
 
             return faces;
         }
-        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.ExtrusionRoof roof)
-        {
-            var faces = new List<ADSK.GeometryObject>();
-            var geoElement = roof.get_Geometry(new ADSK.Options());
 
+        public static Polygon[] ExtractRoofFootprint(this ADSK.Element roof)
+        {
+            List<Polygon> polygons = new List<Polygon>();
+            var minimumPoint = roof.get_BoundingBox(null).Min;
+            var plane = ADSK.Plane.CreateByNormalAndOrigin(ADSK.XYZ.BasisZ, minimumPoint);
+
+            var geoElement = roof.get_Geometry(new ADSK.Options());
             foreach (var geoObj in geoElement)
             {
                 if (geoObj is ADSK.Solid solid)
                 {
-                    foreach (ADSK.Face face in solid.Faces)
+                    var extrusionAnalyze = ADSK.ExtrusionAnalyzer.Create(solid, plane, ADSK.XYZ.BasisZ);
+                    var face = extrusionAnalyze.GetExtrusionBase();
+                    var outerCurves = face.GetEdgesAsCurveLoops().First();
+
+                    List<Vector3> vertices = new List<Vector3>();
+                    foreach (var c in outerCurves)
                     {
-                        faces.Add(face);
+                        if (c is ADSK.Arc arc)
+                        {
+                            var points = arc.Tessellate();
+                            vertices.AddRange(points.Select(p => p.ToVector3(true)));
+                        }
+                        else
+                        {
+                            vertices.Add(c.GetEndPoint(0).ToVector3(true));
+                        }
                     }
+
+                    polygons.Add(new Polygon(vertices.Distinct().ToList()));
                 }
             }
 
-            return faces;
+            return polygons.ToArray();
         }
-        public static Mesh BuildEnvelope(Mesh topSide, Mesh underSide)
-        {
-            Mesh mesh = new Mesh();
-
-            foreach (var v in topSide.Vertices)
-            {
-                mesh.AddVertex(v);
-            }
-            foreach (var t in topSide.Triangles)
-            {
-                mesh.AddTriangle(t);
-            }
-            foreach (var v in underSide.Vertices)
-            {
-                mesh.AddVertex(v);
-            }
-            foreach (var t in underSide.Triangles)
-            {
-                mesh.AddTriangle(t);
-            }
-            mesh.ComputeNormals();
-
-            return mesh;
-        }
-
-        public static Mesh BuildEnvelope(Polygon polygon, double thickness)
-        {
-            Mesh mesh = new Mesh();
-
-            var transformedPolygon = polygon.TransformedPolygon(new Transform(0.0, 0.0, thickness));
-
-            var ePoints = transformedPolygon.Vertices.ToList();
-            var uPoints = polygon.Vertices.ToList();
-
-            var sideTriangles = new List<Elements.Geometry.Triangle>();
-            for (int i = 0; i < ePoints.Count; i++)
-            {
-                sideTriangles.Add(new Elements.Geometry.Triangle(new Vertex(ePoints[i]),
-                    new Vertex(uPoints[i]),
-                    new Vertex(uPoints[(i + 1) % uPoints.Count])));
-                sideTriangles.Add(new Elements.Geometry.Triangle(new Vertex(ePoints[i]),
-                    new Vertex(uPoints[(i + 1) % uPoints.Count]),
-                    new Vertex(ePoints[(i + 1) % ePoints.Count])));
-            }
-
-            foreach (var t in sideTriangles)
-            {
-                mesh.AddTriangle(t);
-
-                foreach (var v in t.Vertices)
-                {
-                    mesh.AddVertex(v);
-                }
-            }
-            mesh.ComputeNormals();
-
-            return mesh;
-        }
+       
     }
 }
