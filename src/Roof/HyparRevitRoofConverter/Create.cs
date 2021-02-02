@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Elements;
 using Elements.Conversion.Revit.Extensions;
 using ADSK = Autodesk.Revit.DB;
 using Elements.Geometry;
@@ -16,7 +17,6 @@ namespace HyparRevitRoofConverter
             Mesh mesh = new Mesh();
             foreach (var geo in faces)
             {
-
                 if (geo is ADSK.Face face)
                 {
                     //convert the face to a mesh. if it is a conical face, we use a lower precision
@@ -42,6 +42,7 @@ namespace HyparRevitRoofConverter
 
             return mesh;
         }
+
         public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.Element roof)
         {
             var faces = new List<ADSK.GeometryObject>();
@@ -57,11 +58,10 @@ namespace HyparRevitRoofConverter
                     }
                 }
             }
-
             return faces;
         }
 
-        public static Polygon[] ExtractRoofFootprint(this ADSK.Element roof)
+        public static Polygon[] ExtractRoofFootprint(this ADSK.RoofBase roof)
         {
             List<Polygon> polygons = new List<Polygon>();
             var minimumPoint = roof.get_BoundingBox(null).Min;
@@ -79,14 +79,17 @@ namespace HyparRevitRoofConverter
                     List<Vector3> vertices = new List<Vector3>();
                     foreach (var c in outerCurves)
                     {
-                        if (c is ADSK.Arc arc)
+                        switch (c.GetType().ToString())
                         {
-                            var points = arc.Tessellate();
-                            vertices.AddRange(points.Select(p => p.ToVector3(true)));
-                        }
-                        else
-                        {
-                            vertices.Add(c.GetEndPoint(0).ToVector3(true));
+                            case "Autodesk.Revit.DB.Arc":
+                                vertices.AddRange(c.Tessellate().Select(p => p.ToVector3(true)));
+                                break;
+                            case "Autodesk.Revit.DB.HermiteSpline":
+                                vertices.AddRange(c.Tessellate().Select(p => p.ToVector3(true)));
+                                break;
+                            default:
+                                vertices.Add(c.GetEndPoint(0).ToVector3(true));
+                                break;
                         }
                     }
 
@@ -96,6 +99,48 @@ namespace HyparRevitRoofConverter
 
             return polygons.ToArray();
         }
-       
+
+        public static Mesh ProfileRoofToMesh(this ADSK.ExtrusionRoof roof, bool top = true)
+        {
+            var faces = new List<ADSK.GeometryObject>();
+
+            var profileCurves = new List<ADSK.ModelCurve>();
+            foreach (ADSK.ModelCurve modelCurve in roof.GetProfile())
+            {
+                profileCurves.Add(modelCurve);
+            }
+
+            var geoElement = roof.get_Geometry(new ADSK.Options());
+            foreach (var geoObj in geoElement)
+            {
+                if (geoObj is ADSK.Solid solid)
+                {
+                    foreach (ADSK.Face face in solid.Faces)
+                    {
+                        foreach (var curve in profileCurves)
+                        {
+                            var geoCurve = curve.GeometryCurve;
+                            if (!top)
+                            {
+                                var translate = ADSK.Transform.CreateTranslation(new ADSK.XYZ(0, 0,-
+                                    roof.get_Parameter(ADSK.BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM).AsDouble()));
+
+                                geoCurve = curve.GeometryCurve.CreateTransformed(translate);
+                            }
+
+                            var comparisonResult = face.Intersect(geoCurve);
+                            var faceNormal = face.ComputeNormal(new ADSK.UV(0.5, 0.5));
+                            var curveNormal = curve.SketchPlane.GetPlane().Normal;
+                            if (comparisonResult == ADSK.SetComparisonResult.Subset && !faceNormal.IsAlmostEqualTo(curveNormal))
+                            {
+                                faces.Add(face);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return FacesToMesh(faces);
+        }
     }
 }

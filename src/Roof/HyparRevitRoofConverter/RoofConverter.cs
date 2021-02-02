@@ -48,9 +48,10 @@ namespace HyparRevitRoofConverter
             var returnList = new List<Element>();
 
             ADSK.Document doc = revitRoof.Document;
+            var bBox = revitRoof.get_BoundingBox(null);
 
-            double elevation = 0;
-            double highPoint = 0;
+            double elevation = Units.FeetToMeters(bBox.Min.Z);
+            double highPoint = Units.FeetToMeters(bBox.Max.Z);
             double thickness = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM).AsDouble()); //works for both
             double area = Units.FeetToMeters(revitRoof.get_Parameter(ADSK.BuiltInParameter.HOST_AREA_COMPUTED).AsDouble()); //works for both
 
@@ -71,9 +72,6 @@ namespace HyparRevitRoofConverter
                 var bottomFaces = bottomReferences.Select(r => footprintRoof.GetGeometryObjectFromReference(r)).ToList();
                 underside = Create.FacesToMesh(bottomFaces);
 
-                //get outer perimeter
-                outerPerimeter = footprintRoof.ExtractRoofFootprint().First();
-
                 //create whole envelope
                 var faces = footprintRoof.ExtractRoofFaces();
                 envelope = Create.FacesToMesh(faces);
@@ -81,23 +79,20 @@ namespace HyparRevitRoofConverter
 
             if (revitRoof is ADSK.ExtrusionRoof extrusionRoof)
             {
+                //create topside and underside
+                topside = extrusionRoof.ProfileRoofToMesh();
+                underside = extrusionRoof.ProfileRoofToMesh(false);
+                
+                //build whole envelope
                 var faces = extrusionRoof.ExtractRoofFaces();
                 envelope = Create.FacesToMesh(faces);
-                
-                outerPerimeter = extrusionRoof.ExtractRoofFootprint().First();
             }
-
-            if (envelope != null)
-            {
-                var sortedVertices = envelope.Vertices.OrderBy(v => v.Position.Z).ToList();
-                elevation = sortedVertices.First().Position.Z;
-                highPoint = sortedVertices.Last().Position.Z;
-            }
-           
+            //get the perimeter (same for both roof types)
+            outerPerimeter = ((ADSK.RoofBase)revitRoof).ExtractRoofFootprint().First();
 
             //build the roof
             Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black, null, false, Guid.NewGuid(), "Roof");
-            
+
             //create mesh element for visualization
             returnList.Add(new MeshElement(envelope, BuiltInMaterials.Default));
 
@@ -107,29 +102,7 @@ namespace HyparRevitRoofConverter
             }
 
             returnList.Add(hyparRoof);
-
             return returnList.ToArray();
-        }
-
-        private static Polygon[] ToPolygon(ADSK.ModelCurveArrArray value)
-        {
-            var count = value.Size;
-            var list = new Polygon[count];
-
-            int index = 0;
-            foreach (var curveArray in value.Cast<ADSK.ModelCurveArray>())
-            {
-                List<Vector3> vertices = new List<Vector3>();
-
-                foreach (var curve in curveArray.Cast<ADSK.ModelCurve>())
-                    vertices.Add(curve.GeometryCurve.GetEndPoint(0).ToVector3(true));
-
-                var polycurve = new Polygon(vertices);
-
-                list[index++] = polycurve;
-            }
-
-            return list;
         }
 
     }
