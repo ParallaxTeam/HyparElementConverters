@@ -10,7 +10,6 @@ using Elements.Conversion.Revit;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
 using Elements.Geometry.Solids;
-using GeometryEx;
 using ADSK = Autodesk.Revit.DB;
 using Vertex = Elements.Geometry.Vertex;
 
@@ -50,9 +49,9 @@ namespace HyparRevitRoofConverter
 
             ADSK.Document doc = revitRoof.Document;
             double levelElevation = 0;
-            
 
-            
+
+
 
             double elevation = 0;
             double highPoint = 0;
@@ -84,47 +83,25 @@ namespace HyparRevitRoofConverter
                 underside = Create.FacesToMesh(bottomFaces);
 
                 outerPerimeter = ToPolygon(footprintRoof.GetProfiles()).First();
+
+                //create whole envelope
+                var faces = footprintRoof.ExtractRoofFaces();
+                envelope = Create.FacesToMesh(faces);
             }
 
             if (revitRoof is ADSK.ExtrusionRoof extrusionRoof)
             {
-                var topfaces = new List<ADSK.GeometryObject>{};
-                var bottomFaces = new List<ADSK.GeometryObject> { };
-                var geoElement = extrusionRoof.get_Geometry(new ADSK.Options());
-                
-                foreach (var geoObj in geoElement)
-                {
-                    if (geoObj is ADSK.Solid solid)
-                    {
-                        foreach (ADSK.Face face in solid.Faces)
-                        {
-                            var normal = face.ComputeNormal(new ADSK.UV(0.5, 0.5));
-                            if (normal.Z > 0.5)
-                            {
-                                topfaces.Add(face);
-                            }
+                var faces = extrusionRoof.ExtractRoofFaces();
+                envelope = Create.FacesToMesh(faces);
 
-                            if (normal.Z < 0)
-                            {
-                                bottomFaces.Add(face);
-                            }
-                        }
-                        
-                    }
-                }
-
-                topside = Create.FacesToMesh(topfaces);
-                underside = Create.FacesToMesh(bottomFaces);
                 //outerPerimeter = underside.PolygonBoundary();
             }
-            //TODO: Change this to build as a whole envelope
 
-            envelope = Create.BuildEnvelope(topside,underside);
 
             Roof hyparRoof = new Roof(envelope, topside, underside, outerPerimeter, elevation, highPoint, thickness, area, new Transform(), BuiltInMaterials.Black, null, false, Guid.NewGuid(), "Roof");
 
-            returnList.Add(new MeshElement(topside, BuiltInMaterials.Default));
-            returnList.Add(new MeshElement(underside, BuiltInMaterials.Default));
+            //returnList.Add(new MeshElement(topside, BuiltInMaterials.Default));
+            //returnList.Add(new MeshElement(underside, BuiltInMaterials.Default));
             returnList.Add(new MeshElement(envelope, BuiltInMaterials.Default));
             returnList.Add(hyparRoof);
 
@@ -185,6 +162,6 @@ namespace HyparRevitRoofConverter
 
             return list;
         }
- 
+
     }
 }

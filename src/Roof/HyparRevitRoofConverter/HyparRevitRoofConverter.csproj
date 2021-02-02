@@ -52,12 +52,8 @@
     <Reference Include="Csg, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Hypar.Elements.0.8.2\lib\netstandard2.0\Csg.dll</HintPath>
     </Reference>
-    <Reference Include="Elements.Conversion.Revit, Version=0.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.2.1\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="GeometryEx, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GeometryEx.8.0.0\lib\netstandard2.0\GeometryEx.dll</HintPath>
+    <Reference Include="Elements.Conversion.Revit, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.3.0\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
     </Reference>
     <Reference Include="glTFLoader, Version=1.1.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\glTF2Loader.1.1.3-alpha\lib\net35\glTFLoader.dll</HintPath>
@@ -134,10 +130,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Textures\UV.jpg" />
-    <Content Include="UV.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

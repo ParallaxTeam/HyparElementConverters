@@ -42,7 +42,42 @@ namespace HyparRevitRoofConverter
 
             return mesh;
         }
+        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.FootPrintRoof roof)
+        {
+            var faces = new List<ADSK.GeometryObject>();
+            var geoElement = roof.get_Geometry(new ADSK.Options());
 
+            foreach (var geoObj in geoElement)
+            {
+                if (geoObj is ADSK.Solid solid)
+                {
+                    foreach (ADSK.Face face in solid.Faces)
+                    {
+                        faces.Add(face);
+                    }
+                }
+            }
+
+            return faces;
+        }
+        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.ExtrusionRoof roof)
+        {
+            var faces = new List<ADSK.GeometryObject>();
+            var geoElement = roof.get_Geometry(new ADSK.Options());
+
+            foreach (var geoObj in geoElement)
+            {
+                if (geoObj is ADSK.Solid solid)
+                {
+                    foreach (ADSK.Face face in solid.Faces)
+                    {
+                        faces.Add(face);
+                    }
+                }
+            }
+
+            return faces;
+        }
         public static Mesh BuildEnvelope(Mesh topSide, Mesh underSide)
         {
             Mesh mesh = new Mesh();
