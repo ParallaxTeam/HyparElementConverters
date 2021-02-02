@@ -96,6 +96,7 @@ namespace HyparRevitRoofConverter
             //create mesh element for visualization
             returnList.Add(new MeshElement(envelope, BuiltInMaterials.Default));
 
+            //temporarily display the perimeter for debug TODO: Remove this.
             foreach (var line in outerPerimeter.Segments())
             {
                 returnList.Add(new ModelCurve(line));
