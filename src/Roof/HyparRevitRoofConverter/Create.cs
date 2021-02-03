@@ -43,7 +43,7 @@ namespace HyparRevitRoofConverter
             return mesh;
         }
 
-        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.Element roof)
+        public static List<ADSK.GeometryObject> ExtractRoofFaces(this ADSK.RoofBase roof)
         {
             var faces = new List<ADSK.GeometryObject>();
             var geoElement = roof.get_Geometry(new ADSK.Options());
@@ -92,24 +92,26 @@ namespace HyparRevitRoofConverter
                                 break;
                         }
                     }
-
                     polygons.Add(new Polygon(vertices.Distinct().ToList()));
                 }
             }
 
             return polygons.ToArray();
         }
-
+        //this method is special to extrusion (profile) roofs. we use the profile lines to find the top surface or the bottom surface.
         public static Mesh ProfileRoofToMesh(this ADSK.ExtrusionRoof roof, bool top = true)
         {
+            //to store the faces
             var faces = new List<ADSK.GeometryObject>();
 
+            //extract profile curves.
             var profileCurves = new List<ADSK.ModelCurve>();
             foreach (ADSK.ModelCurve modelCurve in roof.GetProfile())
             {
                 profileCurves.Add(modelCurve);
             }
 
+            //iterate through the solids, then the faces.
             var geoElement = roof.get_Geometry(new ADSK.Options());
             foreach (var geoObj in geoElement)
             {
@@ -139,8 +141,25 @@ namespace HyparRevitRoofConverter
                     }
                 }
             }
-
+            //return a new neat mesh
             return FacesToMesh(faces);
+        }
+        
+        public static Dictionary<string,Elements.Material> GetMaterials(this ADSK.RoofBase roof)
+        {
+            ADSK.Document doc = roof.Document;
+
+            var roofType = roof.RoofType;
+            var allLayers = roofType.GetCompoundStructure().GetLayers();
+
+            ADSK.Material topLayerMaterial = doc.GetElement(allLayers.First().MaterialId) as ADSK.Material;
+            ADSK.Material bottomLayerMaterial = doc.GetElement(allLayers.Last().MaterialId) as ADSK.Material;
+
+            return new Dictionary<string, Material>()
+            {
+                {"top", topLayerMaterial.ToElementsMaterial()},
+                {"bottom", bottomLayerMaterial.ToElementsMaterial()},
+            };
         }
     }
 }
