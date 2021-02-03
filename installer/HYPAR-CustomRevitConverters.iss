@@ -1,5 +1,5 @@
 #define MyAppName "HYPAR Converters by Parallax Team"
-#define MyAppVersion "2021.1.1"
+#define MyAppVersion "2021.2.1"
 #define MyAppPublisher "ParallaxTeam"
 #define MyAppURL "https://github.com/ParallaxTeam/HyparElementConverters"
 
@@ -32,8 +32,11 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Components]
 Name: curtainWallConverter; Description: Hypar Revit Curtain Wall Converter;  Types: full
+Name: roofConverter; Description: Hypar Roof Converter;  Types: full
 
 [Files]
 ; Curtain Wall Converter Option
 Source: "C:\Users\johnpierson\Documents\Repos\HyparElementConverters\src\CurtainWall\HyparRevitCurtainWallConverter\bin\Debug\HyparRevitCurtainWallConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: curtainWallConverter 
 
+; Roof Converter Option
+Source: "C:\Users\johnpierson\Documents\Repos\HyparElementConverters\src\Roof\HyparRevitRoofConverter\bin\Debug\HyparRevitRoofConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: roofConverter 

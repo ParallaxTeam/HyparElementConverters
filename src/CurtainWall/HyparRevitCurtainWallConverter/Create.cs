@@ -222,8 +222,8 @@ namespace HyparRevitCurtainWallConverter
             {
                 new Extrude(transProfile, centerLine.Length(), centerLine.Direction(), false)
             };
-            
-            return new Mullion(transProfile, centerLine,centerLine.Length(), null, DefaultMullionMaterial, new Representation(list),false, Guid.NewGuid(), mullionTypeName);
+
+            return new Mullion(null, DefaultMullionMaterial, new Representation(list), false, Guid.NewGuid(), mullionTypeName);
         }
 
         //here we generate spandrel panels and glazed panels
