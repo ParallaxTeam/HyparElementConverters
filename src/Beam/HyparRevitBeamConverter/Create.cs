@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Autodesk.Revit.DB;
+using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
 using ADSK = Autodesk.Revit.DB;
@@ -13,10 +14,50 @@ namespace HyparRevitBeamConverter
 {
     public static partial class Create
     {
-        public static Elements.Beam BeamFromRevitBeam(ADSK.FamilyInstance column, Document doc)
-        {
+        private static double _endExtension = 0;
+        private static double _startExtension = 0;
+        private static double _crossRotation = 0;
 
-            return null;
+        public static Elements.Beam BeamFromRevitBeam(ADSK.FamilyInstance beam)
+        {
+            var profile = GetProfile(beam);
+            var locationCurve = GetLocationCurve(beam);
+
+            Elements.Beam newBeam =
+                new Beam(locationCurve, profile, null, _startExtension, _endExtension, _crossRotation);
+
+            return newBeam;
+        }
+
+        private static void GetStartEndExtension(FamilyInstance beam)
+        {
+            var start = beam.get_Parameter(BuiltInParameter.START_EXTENSION).AsDouble();
+            var end = beam.get_Parameter(BuiltInParameter.END_EXTENSION).AsDouble();
+            var cross = beam.get_Parameter(BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE).AsDouble();
+
+            _startExtension = Elements.Units.FeetToMeters(start);
+            _endExtension = Elements.Units.FeetToMeters(end);
+            _crossRotation = Elements.Units.FeetToMeters(cross);
+        }
+        
+        private static Elements.Geometry.Curve GetLocationCurve(FamilyInstance beam)
+        {
+            var sweptProfile = beam.GetSweptProfile();
+            var drivingCurve = sweptProfile.GetDrivingCurve();
+
+            Elements.Geometry.Curve curve = null;
+
+            switch (drivingCurve)
+            {
+                case ADSK.Line line:
+                    curve = new Elements.Geometry.Line(line.GetEndPoint(0).ToVector3(true), line.GetEndPoint(1).ToVector3(true));
+                    break;
+                case ADSK.Arc arc:
+                    curve = arc.ToHyparArc();
+                    break;
+            }
+
+            return curve;
         }
         private static Elements.Geometry.Profile GetProfile(FamilyInstance beam)
         {
@@ -42,6 +83,19 @@ namespace HyparRevitBeamConverter
         private static double GetLengthOfBeam(FamilyInstance beam)
         {
             return beam.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM).AsDouble();
+        }
+
+        private static Elements.Geometry.Arc ToHyparArc(this ADSK.Arc arc)
+        {
+            var center = arc.Center;
+            var dir0 = (arc.GetEndPoint(0) - center).Normalize();
+            var dir1 = (arc.GetEndPoint(1) - center).Normalize();
+            var startangle = dir0.AngleOnPlaneTo(arc.XDirection, arc.Normal);
+            var endAngle = dir1.AngleOnPlaneTo(arc.XDirection, arc.Normal);
+
+            return new Elements.Geometry.Arc(center.ToVector3(true), Elements.Units.FeetToMeters(arc.Radius),
+                Elements.Units.FeetToMeters(startangle), Elements.Units.FeetToMeters(endAngle));
+
         }
     }
 }
