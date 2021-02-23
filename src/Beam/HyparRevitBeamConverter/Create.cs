@@ -23,8 +23,10 @@ namespace HyparRevitBeamConverter
             var profile = GetProfile(beam);
             var locationCurve = GetLocationCurve(beam);
 
+            GetStartEndExtension(beam);
+
             Elements.Beam newBeam =
-                new Beam(locationCurve, profile, null, _startExtension, _endExtension, _crossRotation);
+                new Beam(locationCurve, profile , null, _startExtension, _endExtension, _crossRotation);
 
             return newBeam;
         }
@@ -37,7 +39,11 @@ namespace HyparRevitBeamConverter
 
             _startExtension = Elements.Units.FeetToMeters(start);
             _endExtension = Elements.Units.FeetToMeters(end);
-            _crossRotation = Elements.Units.FeetToMeters(cross);
+
+            var crv = beam.GetSweptProfile().GetDrivingCurve();
+            double buffer = crv is ADSK.Arc || crv is ADSK.HermiteSpline ? 90 : 0;
+
+            _crossRotation = (cross / Math.PI * 180) + buffer;
         }
         
         private static Elements.Geometry.Curve GetLocationCurve(FamilyInstance beam)
@@ -53,7 +59,10 @@ namespace HyparRevitBeamConverter
                     curve = new Elements.Geometry.Line(line.GetEndPoint(0).ToVector3(true), line.GetEndPoint(1).ToVector3(true));
                     break;
                 case ADSK.Arc arc:
-                    curve = arc.ToHyparArc();
+                    curve = arc.ToHyparPolyline();
+                    break;
+                case ADSK.HermiteSpline spline:
+                    curve = new Elements.Geometry.Polyline(spline.ControlPoints.Select(p => p.ToVector3(true)).ToList());
                     break;
             }
 
@@ -64,7 +73,7 @@ namespace HyparRevitBeamConverter
             List<Autodesk.Revit.DB.Curve> curves = new List<Autodesk.Revit.DB.Curve>();
             var sweptProfile = beam.GetSweptProfile();
             var profile = sweptProfile.GetSweptProfile();
-
+            
             IEnumerator enumerator = profile.Curves.GetEnumerator();
 
             while (enumerator.MoveNext())
@@ -72,7 +81,7 @@ namespace HyparRevitBeamConverter
                 Autodesk.Revit.DB.Curve currentCurve = enumerator.Current as Autodesk.Revit.DB.Curve;
                 curves.Add(currentCurve);
             }
-
+            
             Polygon polygon = new Polygon(curves.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList());
 
             Elements.Geometry.Profile hyparProfile = new Elements.Geometry.Profile(polygon);
@@ -85,17 +94,9 @@ namespace HyparRevitBeamConverter
             return beam.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM).AsDouble();
         }
 
-        private static Elements.Geometry.Arc ToHyparArc(this ADSK.Arc arc)
+        public static Elements.Geometry.Polyline ToHyparPolyline(this ADSK.Arc arc)
         {
-            var center = arc.Center;
-            var dir0 = (arc.GetEndPoint(0) - center).Normalize();
-            var dir1 = (arc.GetEndPoint(1) - center).Normalize();
-            var startangle = dir0.AngleOnPlaneTo(arc.XDirection, arc.Normal);
-            var endAngle = dir1.AngleOnPlaneTo(arc.XDirection, arc.Normal);
-
-            return new Elements.Geometry.Arc(center.ToVector3(true), Elements.Units.FeetToMeters(arc.Radius),
-                Elements.Units.FeetToMeters(startangle), Elements.Units.FeetToMeters(endAngle));
-
+            return new Elements.Geometry.Polyline(arc.Tessellate().Select(p => p.ToVector3(true)).ToList());
         }
     }
 }

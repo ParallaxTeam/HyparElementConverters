@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB.IFC;
+
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
 using Element = Elements.Element;
@@ -21,48 +22,20 @@ namespace HyparRevitBeamConverter
         {
             List<BuiltInCategory> targetCategories = new List<BuiltInCategory>
             {
-                ADSK.BuiltInCategory.OST_StructuralFraming,
-                ADSK.BuiltInCategory.OST_StructuralFramingSystem
+                ADSK.BuiltInCategory.OST_StructuralFraming
             };
             ElementMulticategoryFilter multicategoryFilter = new ElementMulticategoryFilter(targetCategories);
 
             return collector.WhereElementIsNotElementType().WherePasses(multicategoryFilter);
         }
 
-        private List<ElementId> _convertedIds = new List<ElementId>();
         public Element[] FromRevit(Autodesk.Revit.DB.Element revitElement, Document document)
         {
-            switch (revitElement)
-            {
-                case BeamSystem beamSystem:
-                    {
-                        var beams = new List<Element>();
-                        foreach (var b in beamSystem.GetBeamIds())
-                        {
-                            if (_convertedIds.Contains(b)) continue;
+            var beamFamilyInstance = revitElement as FamilyInstance;
 
-                            var beamFamilyInstance = document.GetElement(b) as ADSK.FamilyInstance;
-                            beams.Add(Create.BeamFromRevitBeam(beamFamilyInstance));
-                            _convertedIds.Add(b);
-                        }
+            var beams = new List<Element> { Create.BeamFromRevitBeam(beamFamilyInstance) };
 
-                        return beams.ToArray();
-                    }
-                case FamilyInstance beamFamilyInstance:
-                    {
-                        if (_convertedIds.Contains(beamFamilyInstance.Id)) break;
-
-                        _convertedIds.Add(beamFamilyInstance.Id);
-
-                        var beams = new List<Element> { Create.BeamFromRevitBeam(beamFamilyInstance) };
-
-                        return beams.ToArray();
-                    }
-            }
-
-            return null;
-
-
+            return beams.ToArray();
         }
 
         public ElementId[] ToRevit(Element hyparElement, LoadContext context)
