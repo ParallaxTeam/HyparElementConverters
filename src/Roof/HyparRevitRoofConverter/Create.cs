@@ -1,12 +1,9 @@
-﻿using System;
+﻿using Elements;
+using Elements.Conversion.Revit.Extensions;
+using Elements.Geometry;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Elements;
-using Elements.Conversion.Revit.Extensions;
 using ADSK = Autodesk.Revit.DB;
-using Elements.Geometry;
 
 namespace HyparRevitRoofConverter
 {
@@ -84,9 +81,11 @@ namespace HyparRevitRoofConverter
                             case "Autodesk.Revit.DB.Arc":
                                 vertices.AddRange(c.Tessellate().Select(p => p.ToVector3(true)));
                                 break;
+
                             case "Autodesk.Revit.DB.HermiteSpline":
                                 vertices.AddRange(c.Tessellate().Select(p => p.ToVector3(true)));
                                 break;
+
                             default:
                                 vertices.Add(c.GetEndPoint(0).ToVector3(true));
                                 break;
@@ -98,6 +97,7 @@ namespace HyparRevitRoofConverter
 
             return polygons.ToArray();
         }
+
         //this method is special to extrusion (profile) roofs. we use the profile lines to find the top surface or the bottom surface.
         public static Mesh ProfileRoofToMesh(this ADSK.ExtrusionRoof roof, bool top = true)
         {
@@ -124,7 +124,7 @@ namespace HyparRevitRoofConverter
                             var geoCurve = curve.GeometryCurve;
                             if (!top)
                             {
-                                var translate = ADSK.Transform.CreateTranslation(new ADSK.XYZ(0, 0,-
+                                var translate = ADSK.Transform.CreateTranslation(new ADSK.XYZ(0, 0, -
                                     roof.get_Parameter(ADSK.BuiltInParameter.ROOF_ATTR_THICKNESS_PARAM).AsDouble()));
 
                                 geoCurve = curve.GeometryCurve.CreateTransformed(translate);
@@ -144,8 +144,8 @@ namespace HyparRevitRoofConverter
             //return a new neat mesh
             return FacesToMesh(faces);
         }
-        
-        public static Dictionary<string,Elements.Material> GetMaterials(this ADSK.RoofBase roof)
+
+        public static Dictionary<string, Elements.Material> GetMaterials(this ADSK.RoofBase roof)
         {
             ADSK.Document doc = roof.Document;
 

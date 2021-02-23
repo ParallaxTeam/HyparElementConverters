@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Autodesk.Revit.UI;
-using Autodesk.Revit.UI.Selection;
-using Elements;
+﻿using Elements;
 using Elements.Conversion.Revit;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
-using Elements.Geometry.Solids;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using ADSK = Autodesk.Revit.DB;
-using Vertex = Elements.Geometry.Vertex;
-
 
 namespace HyparRevitRoofConverter
 {
@@ -53,7 +46,7 @@ namespace HyparRevitRoofConverter
             //document and element as roofbase (the base class for all Revit roofs)
             ADSK.Document doc = revitRoof.Document;
             ADSK.RoofBase roofBase = revitRoof as ADSK.RoofBase;
-            
+
             //get the top and bottom materials
             var materials = roofBase.GetMaterials();
             materials.TryGetValue("top", out var topMaterial);
@@ -160,7 +153,7 @@ namespace HyparRevitRoofConverter
             ADSK.DirectShape dShape = ADSK.DirectShape.CreateElement(doc, new ADSK.ElementId(-2000035));
             dShape.SetShape(result.GetGeometricalObjects());
             dShape.SetName("HYPAR_Roof");
-           
+
             //return the new stuff
             returnElementIds.Add(dShape.Id);
 
