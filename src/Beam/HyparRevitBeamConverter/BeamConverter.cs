@@ -5,11 +5,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.DB.IFC;
-
+using Autodesk.Revit.DB.Structure;
+using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
+using HyparRevitBeamConverter.Utilities;
 using Element = Elements.Element;
 using ADSK = Autodesk.Revit.DB;
+using Arc = Elements.Geometry.Arc;
+using Curve = Elements.Geometry.Curve;
+using Line = Elements.Geometry.Line;
 
 namespace HyparRevitBeamConverter
 {
@@ -40,15 +45,57 @@ namespace HyparRevitBeamConverter
 
         public ElementId[] ToRevit(Element hyparElement, LoadContext context)
         {
-            throw new NotImplementedException();
+            Document doc = context.Document;
+            Beam hyparBeam = hyparElement as Beam;
+
+
+            string[] beamData = hyparBeam.Name.Split(',');
+
+            FamilySymbol familySymbol = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilySymbol)).Cast<FamilySymbol>().FirstOrDefault(f => f.Name.Equals(beamData[1]));
+
+            Level level = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_Levels).WhereElementIsNotElementType().Cast<Level>().FirstOrDefault();
+
+            ADSK.Curve revitCurve = null;
+            switch (hyparBeam.Curve)
+            {
+                case Line line:
+                    revitCurve = ADSK.Line.CreateBound(line.Start.ToXYZ(true), line.End.ToXYZ(true));
+                    break;
+                case Polyline polyLine:
+                    revitCurve = HermiteSpline.Create(polyLine.Vertices.Select(v => v.ToXYZ(true)).ToList(), false);
+                    break;
+            }
+
+            List<ElementId> newIds = new List<ElementId>();
+
+            if (!familySymbol.IsActive) familySymbol.Activate();
+
+            var newInstance = doc.Create.NewFamilyInstance(revitCurve, familySymbol, level, StructuralType.Beam);
+
+            doc.Regenerate();
+            newInstance.get_Parameter(BuiltInParameter.START_EXTENSION).Set(Elements.Units.MetersToFeet(hyparBeam.StartSetback));
+            newInstance.get_Parameter(BuiltInParameter.END_EXTENSION).Set(Elements.Units.MetersToFeet(hyparBeam.EndSetback));
+            var rotation = hyparBeam.Rotation * Math.PI / 180;
+            newInstance.get_Parameter(BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE).Set(rotation);
+            doc.Regenerate();
+
+            //set offset to compensate for center line
+            var height = ExporterIFCUtils.GetMinSymbolHeight(familySymbol);
+            newInstance.get_Parameter(BuiltInParameter.Z_OFFSET_VALUE).Set(height / 2);
+
+            newIds.Add(newInstance.Id);
+
+            return newIds.ToArray();
         }
 
         public Element[] OnlyLoadableElements(Element[] allElements)
         {
-            throw new NotImplementedException();
+            var types = allElements.Select(e => e.GetType());
+            var elemType = typeof(Elements.Beam);
+            return allElements.Where(e => e.GetType().FullName == typeof(Elements.Beam).FullName).ToArray();
         }
-
-
 
     }
 }
