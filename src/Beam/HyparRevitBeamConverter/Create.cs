@@ -79,17 +79,25 @@ namespace HyparRevitBeamConverter
 
         private static Elements.Geometry.Profile GetProfile(FamilyInstance beam)
         {
+            List<ADSK.Face> faces = new List<Face>();
+            var geoElem = beam.get_Geometry(new Options());
+
             List<Autodesk.Revit.DB.Curve> curves = new List<Autodesk.Revit.DB.Curve>();
             var sweptProfile = beam.GetSweptProfile();
             var profile = sweptProfile.GetSweptProfile();
 
-            IEnumerator enumerator = profile.Curves.GetEnumerator();
+            //TODO: get this orienting right
+            var angle = sweptProfile.GetDrivingCurve().Evaluate(0, false).AngleOnPlaneTo(XYZ.BasisX, XYZ.BasisZ);
+            var tForm = ADSK.Transform.CreateRotation(XYZ.BasisZ, angle / Math.PI * 180);
+
+            IEnumerator enumerator = profile.get_Transformed(tForm).Curves.GetEnumerator();
 
             while (enumerator.MoveNext())
             {
                 Autodesk.Revit.DB.Curve currentCurve = enumerator.Current as Autodesk.Revit.DB.Curve;
                 curves.Add(currentCurve);
             }
+
 
             Polygon polygon = new Polygon(curves.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList());
 
