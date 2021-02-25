@@ -83,6 +83,7 @@ namespace HyparRevitBeamConverter
 
             //set offset to compensate for center line
             var height = ExporterIFCUtils.GetMinSymbolHeight(familySymbol);
+            
             newInstance.get_Parameter(BuiltInParameter.Z_OFFSET_VALUE).Set(height / 2);
 
             newIds.Add(newInstance.Id);

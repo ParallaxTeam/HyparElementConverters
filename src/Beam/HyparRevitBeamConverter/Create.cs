@@ -1,5 +1,4 @@
-﻿using Autodesk.Revit.DB;
-using Elements;
+﻿using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
 using System;
@@ -7,7 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ADSK = Autodesk.Revit.DB;
-using Arc = Elements.Geometry.Arc;
+using Profile = Elements.Geometry.Profile;
 
 namespace HyparRevitBeamConverter
 {
@@ -19,7 +18,7 @@ namespace HyparRevitBeamConverter
 
         public static Beam BeamFromRevitBeam(ADSK.FamilyInstance beam)
         {
-            Document doc = beam.Document;
+            ADSK.Document doc = beam.Document;
 
             string levelName = string.Empty;
 
@@ -37,11 +36,11 @@ namespace HyparRevitBeamConverter
         }
 
 
-        private static void GetStartEndExtension(FamilyInstance beam)
+        private static void GetStartEndExtension(ADSK.FamilyInstance beam)
         {
-            var start = beam.get_Parameter(BuiltInParameter.START_EXTENSION).AsDouble();
-            var end = beam.get_Parameter(BuiltInParameter.END_EXTENSION).AsDouble();
-            var cross = beam.get_Parameter(BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE).AsDouble();
+            var start = beam.get_Parameter(ADSK.BuiltInParameter.START_EXTENSION).AsDouble();
+            var end = beam.get_Parameter(ADSK.BuiltInParameter.END_EXTENSION).AsDouble();
+            var cross = beam.get_Parameter(ADSK.BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE).AsDouble();
 
             _startExtension = Elements.Units.FeetToMeters(start);
             _endExtension = Elements.Units.FeetToMeters(end);
@@ -52,7 +51,7 @@ namespace HyparRevitBeamConverter
             _crossRotation = (cross / Math.PI * 180);
         }
 
-        private static Elements.Geometry.Curve GetLocationCurve(FamilyInstance beam)
+        private static Elements.Geometry.Curve GetLocationCurve(ADSK.FamilyInstance beam)
         {
             var sweptProfile = beam.GetSweptProfile();
             var drivingCurve = sweptProfile.GetDrivingCurve();
@@ -77,20 +76,36 @@ namespace HyparRevitBeamConverter
             return curve;
         }
 
-        private static Elements.Geometry.Profile GetProfile(FamilyInstance beam)
+        private static Elements.Geometry.Profile GetProfile(ADSK.FamilyInstance beam)
         {
-            List<ADSK.Face> faces = new List<Face>();
-            var geoElem = beam.get_Geometry(new Options());
+            List<ADSK.PlanarFace> faces = new List<ADSK.PlanarFace>();
+            var geoElem = beam.get_Geometry(new ADSK.Options());
+
+            foreach (var g in geoElem)
+            {
+                if (g is ADSK.GeometryInstance instance)
+                {
+                    foreach (var geoObj in instance.GetSymbolGeometry())
+                    {
+                        if (geoObj is ADSK.Solid solid)
+                        {
+                            var faceEnum = solid.Faces.GetEnumerator();
+                            while (faceEnum.MoveNext())
+                            {
+                                if (faceEnum.Current is ADSK.PlanarFace planarFace)
+                                {
+                                    faces.Add(planarFace);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             List<Autodesk.Revit.DB.Curve> curves = new List<Autodesk.Revit.DB.Curve>();
             var sweptProfile = beam.GetSweptProfile();
             var profile = sweptProfile.GetSweptProfile();
-
-            //TODO: get this orienting right
-            var angle = sweptProfile.GetDrivingCurve().Evaluate(0, false).AngleOnPlaneTo(XYZ.BasisX, XYZ.BasisZ);
-            var tForm = ADSK.Transform.CreateRotation(XYZ.BasisZ, angle / Math.PI * 180);
-
-            IEnumerator enumerator = profile.get_Transformed(tForm).Curves.GetEnumerator();
+            IEnumerator enumerator = profile.Curves.GetEnumerator();
 
             while (enumerator.MoveNext())
             {
@@ -98,17 +113,60 @@ namespace HyparRevitBeamConverter
                 curves.Add(currentCurve);
             }
 
-
             Polygon polygon = new Polygon(curves.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList());
 
-            Elements.Geometry.Profile hyparProfile = new Elements.Geometry.Profile(polygon);
+            foreach (var f in faces)
+            {
+                ADSK.PlanarFace pl = f as ADSK.PlanarFace;
 
-            return hyparProfile;
+                var outerCurveLoop = f.GetEdgesAsCurveLoops().First();
+
+                var curveIterator = outerCurveLoop.GetCurveLoopIterator();
+
+                List<Vector3> points = new List<Vector3>();
+                while (curveIterator.MoveNext())
+                {
+                    points.Add(curveIterator.Current.GetEndPoint(0).ToVector3(true));
+                }
+
+                Polygon tempPolygon = new Polygon(curves.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList());
+
+                if (tempPolygon.Area().ApproximatelyEquals(polygon.Area()))
+                {
+                    return new Profile(tempPolygon);
+                }
+            }
+            return null;
         }
 
-        private static double GetLengthOfBeam(FamilyInstance beam)
+        //I like this way more but orientation is hard
+        //private static Elements.Geometry.Profile GetProfile(FamilyInstance beam)
+        //{
+        //    List<ADSK.Face> faces = new List<Face>();
+        //    var geoElem = beam.get_Geometry(new Options());
+
+        //    List<Autodesk.Revit.DB.Curve> curves = new List<Autodesk.Revit.DB.Curve>();
+        //    var sweptProfile = beam.GetSweptProfile();
+        //    var profile = sweptProfile.GetSweptProfile();
+
+        //    IEnumerator enumerator = profile.Curves.GetEnumerator();
+
+        //    while (enumerator.MoveNext())
+        //    {
+        //        Autodesk.Revit.DB.Curve currentCurve = enumerator.Current as Autodesk.Revit.DB.Curve;
+        //        curves.Add(currentCurve);
+        //    }
+
+        //    Polygon polygon = new Polygon(curves.Select(c => c.GetEndPoint(0).ToVector3(true)).ToList());
+
+        //    Elements.Geometry.Profile hyparProfile = new Elements.Geometry.Profile(polygon);
+
+        //    return hyparProfile;
+        //}
+
+        private static double GetLengthOfBeam(ADSK.FamilyInstance beam)
         {
-            return beam.get_Parameter(BuiltInParameter.INSTANCE_LENGTH_PARAM).AsDouble();
+            return beam.get_Parameter(ADSK.BuiltInParameter.INSTANCE_LENGTH_PARAM).AsDouble();
         }
 
         public static Elements.Geometry.Polyline ToHyparPolyline(this ADSK.Arc arc)
