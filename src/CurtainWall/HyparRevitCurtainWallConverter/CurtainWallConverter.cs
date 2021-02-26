@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Autodesk.Revit.Creation;
+using Autodesk.Revit.DB.IFC;
 using Elements;
 using ADSK = Autodesk.Revit.DB;
 using Elements.Conversion.Revit;
@@ -50,15 +51,13 @@ namespace HyparRevitCurtainWallConverter
             List<ADSK.ElementId> newStuff = new List<ADSK.ElementId>();
 
 
+
             newStuff.AddRange(DirectShapesFromCurtainWall(hyparCurtainWall, context));
-
-
-
 
             return newStuff.ToArray();
         }
 
-
+        
         private static ADSK.ElementId[] DirectShapesFromCurtainWall(CurtainWallPanel hyparCurtainWall, LoadContext context)
         {
             List<ADSK.ElementId> newStuff = new List<ADSK.ElementId>();

@@ -101,5 +101,36 @@ namespace HyparRevitCurtainWallConverter
 
             return extDirection;
         }
+        internal class LineComparer : IEqualityComparer<Line>
+        {
+            public bool Equals(Line p, Line q)
+            {
+
+                Elements.Geometry.Vector3 firstPoint = p.PointAt(0.5);
+                Elements.Geometry.Vector3 secondPoint = q.PointAt(0.5);
+                return firstPoint.Equals(secondPoint);
+            }
+
+            public int GetHashCode(Line l)
+            {
+                return PointString(l.PointAt(0.5)).GetHashCode();
+            }
+        }
+
+        public static string RealString(double a)
+        {
+            return a.ToString("0.##");
+        }
+        public static string PointString(Elements.Geometry.Vector3 p, bool onlySpaceSeparator = false)
+        {
+            string format_string = onlySpaceSeparator
+                ? "{0} {1} {2}"
+                : "({0},{1},{2})";
+
+            return string.Format(format_string,
+                RealString(p.X),
+                RealString(p.Y),
+                RealString(p.Z));
+        }
     }
 }
