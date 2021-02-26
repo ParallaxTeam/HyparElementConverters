@@ -38,158 +38,28 @@ namespace HyparRevitCurtainWallConverter
         public Element[] OnlyLoadableElements(Element[] allElements)
         {
             var types = allElements.Select(e => e.GetType());
-            var elemType = typeof(Elements.CurtainWall);
-            return allElements.Where(e => e.GetType().FullName == typeof(Elements.CurtainWall).FullName).ToArray();
+            var elemType = typeof(Elements.CurtainWallPanel);
+            return allElements.Where(e => e.GetType().FullName == typeof(Elements.CurtainWallPanel).FullName).ToArray();
         }
 
         private static ADSK.ElementId[] CurtainWallFromHypar(Element hyparElement, LoadContext context)
         {
             var doc = context.Document;
-            var hyparCurtainWall = hyparElement as CurtainWall;
+            var hyparCurtainWall = hyparElement as CurtainWallPanel;
 
-            
-            //our default types for now TODO: Relate this somehow to the actual types
-            var firstCurtainWallType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.WallType)).Cast<ADSK.WallType>().First(w => w.Kind == ADSK.WallKind.Curtain);
-            var mullionType = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.MullionType))
-                .Cast<ADSK.MullionType>().FirstOrDefault();
+            List<ADSK.ElementId> newStuff = new List<ADSK.ElementId>();
 
-            //add all the panels to one list
-            var allPanels = new List<Panel>();
-            allPanels.AddRange(hyparCurtainWall.GlazedPanels);
-            allPanels.AddRange(hyparCurtainWall.SpandrelPanels);
 
-            List<ADSK.ElementId> returnElementIds = new List<ADSK.ElementId>();
+            newStuff.AddRange(DirectShapesFromCurtainWall(hyparCurtainWall, context));
 
-            IList<ADSK.Curve> curves = new List<ADSK.Curve>();
-            foreach (var seg in hyparCurtainWall.Profile.Perimeter.Segments())
-            {
-                var line = ADSK.Line.CreateBound(seg.Start.ToXYZ(true), seg.End.ToXYZ(true));
-                curves.Add(line);
-            }
 
-            //create the curtain wall by profile
-            ADSK.Wall wallByProf = ADSK.Wall.Create(doc, curves, firstCurtainWallType.Id, ADSK.ElementId.InvalidElementId, false);
 
-            //remove top constraint
-            wallByProf.get_Parameter(ADSK.BuiltInParameter.WALL_HEIGHT_TYPE).Set(ADSK.ElementId.InvalidElementId);
 
-            //set the height real nice
-            var orderedCurves = curves.OrderBy(c => c.GetEndPoint(0).Z);
-            var maxZ = Math.Max(orderedCurves.Last().GetEndPoint(0).Z, orderedCurves.Last().GetEndPoint(1).Z);
-            var minZ = Math.Min(orderedCurves.First().GetEndPoint(0).Z, orderedCurves.First().GetEndPoint(1).Z);
-            wallByProf.get_Parameter(ADSK.BuiltInParameter.WALL_USER_HEIGHT_PARAM).Set(maxZ - minZ);
-
-            var levels = new ADSK.FilteredElementCollector(doc).OfCategory(ADSK.BuiltInCategory.OST_Levels)
-                .WhereElementIsNotElementType().Cast<ADSK.Level>().OrderBy(l => Math.Abs(l.Elevation - minZ)).ToList();
-
-            wallByProf.get_Parameter(ADSK.BuiltInParameter.WALL_BASE_CONSTRAINT).Set(levels.First().Id);
-            wallByProf.get_Parameter(ADSK.BuiltInParameter.WALL_BASE_OFFSET).Set(minZ - levels.First().Elevation);
-
-            doc.Regenerate();
-
-            try
-            {
-                if (wallByProf.Orientation.DotProduct(Utilities.curveListNormal(curves.ToArray())) < 0)
-                {
-                    wallByProf.Flip();
-                }
-            }
-            catch (Exception)
-            {
-                //suppress flip
-            }
-
-            returnElementIds.Add(wallByProf.Id);
-
-            doc.Regenerate();
-
-            List<ADSK.CurtainGridLine> gridLines = new List<ADSK.CurtainGridLine>();
-            //add the u and v full grid lines
-            foreach (var g in hyparCurtainWall.uGridlines)
-            {
-                var ln = g as Line;
-                try
-                {
-                    var newGrid = wallByProf.CurtainGrid.AddGridLine(true, ln.PointAt(0.5).ToXYZ(true), false);
-                    gridLines.Add(newGrid);
-                    returnElementIds.Add(newGrid.Id);
-                }
-                catch (Exception)
-                {
-                    //skip it, that grid can't be added.
-                }
-            }
-            foreach (var g in hyparCurtainWall.vGridlines)
-            {
-                var ln = g as Elements.Geometry.Line;
-                try
-                {
-                    var newGrid = wallByProf.CurtainGrid.AddGridLine(false, ln.PointAt(0.5).ToXYZ(true), false);
-                    gridLines.Add(newGrid);
-                    returnElementIds.Add(newGrid.Id);
-                }
-                catch (Exception)
-                {
-                    //skip it, that grid can't be added.
-                }
-            }
-
-            const double epsilon = 0.1;
-            //remove segments
-            if (hyparCurtainWall.SkippedSegments.Any())
-            {
-                foreach (Line skippedSegment in hyparCurtainWall.SkippedSegments)
-                {
-                    ADSK.Curve curve = skippedSegment.ToRevitCurve(true);
-                    try
-                    {
-                        var curtainGridLine = gridLines
-                            .First(g => g.FullCurve.Distance(curve.GetEndPoint(0)) < epsilon && g.FullCurve.Distance(curve.GetEndPoint(1)) < epsilon);
-
-                        curtainGridLine.RemoveSegment(curve);
-                    }
-                    catch (Exception)
-                    {
-                        //suppress for now
-                    }
-                }
-            }
-
-            doc.Regenerate();
-            //add the mullions
-            foreach (var gridLine in gridLines)
-            {
-                foreach (ADSK.Curve c in gridLine.ExistingSegmentCurves)
-                {
-                    gridLine.AddMullions(c, mullionType, false);
-                }
-            }
-
-            var panels = wallByProf.CurtainGrid.GetPanelIds().Select(id => doc.GetElement(id) as ADSK.Panel).ToList();
-
-            //build panels with index and matching type (if available)
-            foreach (var panel in allPanels)
-            {
-                var panelData = panel.Name.Split(',');
-                try
-                {
-                    var panelNumber = Convert.ToInt32(panelData[0]);
-                    var panelToUse = new ADSK.FilteredElementCollector(doc).OfClass(typeof(ADSK.PanelType)).FirstOrDefault(p => p.Name.Equals(panelData[1])) as ADSK.PanelType;
-                    panels[panelNumber].PanelType = panelToUse;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
-
-            }
-
-            return returnElementIds.ToArray();
+            return newStuff.ToArray();
         }
 
 
-        private static ADSK.ElementId[] DirectShapesFromCurtainWall(CurtainWall hyparCurtainWall, LoadContext context)
+        private static ADSK.ElementId[] DirectShapesFromCurtainWall(CurtainWallPanel hyparCurtainWall, LoadContext context)
         {
             List<ADSK.ElementId> newStuff = new List<ADSK.ElementId>();
             foreach (var panel in hyparCurtainWall.GlazedPanels)
