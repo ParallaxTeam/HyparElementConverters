@@ -1,14 +1,12 @@
-﻿using Elements;
+﻿using Autodesk.Revit.DB.Structure.StructuralSections;
+using Elements;
 using Elements.Conversion.Revit.Extensions;
 using Elements.Geometry;
+using Elements.Geometry.Profiles;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Autodesk.Revit.DB.Analysis;
-using Autodesk.Revit.DB.IFC;
-using Autodesk.Revit.DB.Structure.StructuralSections;
-using Elements.Geometry.Profiles;
 using ADSK = Autodesk.Revit.DB;
 using Profile = Elements.Geometry.Profile;
 
@@ -30,9 +28,9 @@ namespace HyparRevitBeamConverter
 
             var profile = GetProfile(beam);
             var locationCurve = GetLocationCurve(beam);
-            
+
             GetStartEndExtension(beam);
-            
+
             Elements.Beam newBeam =
                 new Beam(locationCurve, profile, null, _startExtension, _endExtension, _crossRotation, null, false, new Guid(), serializedRevitData);
 
@@ -44,9 +42,9 @@ namespace HyparRevitBeamConverter
             var start = beam.get_Parameter(ADSK.BuiltInParameter.START_EXTENSION).AsDouble();
             var end = beam.get_Parameter(ADSK.BuiltInParameter.END_EXTENSION).AsDouble();
             var cross = beam.get_Parameter(ADSK.BuiltInParameter.STRUCTURAL_BEND_DIR_ANGLE).AsDouble();
-            
+
             //TODO: This will only do cutbacks right now. Need to figure out best way to do extensions.
-            _startExtension = start < 0 ? Elements.Units.FeetToMeters(Math.Abs(start)): 0;
+            _startExtension = start < 0 ? Elements.Units.FeetToMeters(Math.Abs(start)) : 0;
             _endExtension = end < 0 ? Elements.Units.FeetToMeters(Math.Abs(end)) : 0;
 
             _crossRotation = (cross / Math.PI * 180);
@@ -93,8 +91,9 @@ namespace HyparRevitBeamConverter
             switch (beam.Symbol.Family.StructuralSectionShape)
             {
                 case StructuralSectionShape.IWideFlange:
-                    profile = new WideFlangeProfile(beam.Name, new Guid(), Elements.Units.FeetToMeters(_width) , Elements.Units.FeetToMeters(_height));
+                    profile = new WideFlangeProfile(beam.Name, new Guid(), Elements.Units.FeetToMeters(_width), Elements.Units.FeetToMeters(_height));
                     return tForm.OfProfile(profile);
+
                 case StructuralSectionShape.IParallelFlange:
                     profile = new WideFlangeProfile(beam.Name, new Guid(), Elements.Units.FeetToMeters(_width), Elements.Units.FeetToMeters(_height));
                     return tForm.OfProfile(profile);
@@ -118,7 +117,7 @@ namespace HyparRevitBeamConverter
             }
 
             var ordered = points.OrderBy(p => p.X + p.Y);
-            var min =ordered.First();
+            var min = ordered.First();
             var max = ordered.Last();
             _height = max.Y - min.Y;
             _width = max.X - min.X;
@@ -154,6 +153,7 @@ namespace HyparRevitBeamConverter
         {
             return new Polyline(arc.Tessellate().Select(p => p.ToVector3(true)).ToList());
         }
+
         private static IEnumerable<ADSK.Solid> GetSolidsFromGeometry(ADSK.GeometryObject g)
         {
             // TODO merge this with the future recursive solid retrieval method.
