@@ -32,17 +32,17 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Csg, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.0.8.2\lib\netstandard2.0\Csg.dll</HintPath>
+      <HintPath>..\packages\Hypar.Elements.0.8.4-alpha2\lib\netstandard2.0\Csg.dll</HintPath>
     </Reference>
-    <Reference Include="Elements.Conversion.Revit, Version=0.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.3.0\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
+    <Reference Include="Elements.Conversion.Revit, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Hypar.Elements.Conversion.Revit.0.4.0-alpha0\lib\netstandard2.0\Elements.Conversion.Revit.dll</HintPath>
     </Reference>
     <Reference Include="glTFLoader, Version=1.1.3.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\glTF2Loader.1.1.3-alpha\lib\net35\glTFLoader.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hypar.Elements, Version=0.8.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Hypar.Elements.0.8.2\lib\netstandard2.0\Hypar.Elements.dll</HintPath>
+    <Reference Include="Hypar.Elements, Version=0.8.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Hypar.Elements.0.8.4-alpha2\lib\netstandard2.0\Hypar.Elements.dll</HintPath>
     </Reference>
     <Reference Include="LibTessDotNet, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Unofficial.LibTessDotNet.2.0.0\lib\netstandard2.0\LibTessDotNet.dll</HintPath>
@@ -107,9 +107,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Create%28old%29.cs" />
     <Compile Include="Create.cs" />
     <Compile Include="CurtainWall.g.cs" />
     <Compile Include="CurtainWallConverter.cs" />
+    <Compile Include="CurtainWallPanel.g.cs" />
     <Compile Include="Mullion.g.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities.cs" />
@@ -119,7 +121,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Concrete.jpg" />
+    <Content Include="Textures\Concrete.jpg" />
     <Content Include="Textures\UV.jpg" />
+    <Content Include="UV.jpg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -76,5 +76,30 @@ namespace HyparRevitCurtainWallConverter
             }
             return zero.Normalize();
         }
+        public static ADSK.XYZ GetWallDirection(Autodesk.Revit.DB.Wall wall)
+        {
+            ADSK.LocationCurve locCurve = wall.Location as ADSK.LocationCurve;
+            ADSK.XYZ extDirection = ADSK.XYZ.BasisZ;
+
+            var curve = locCurve.Curve;
+            var dir = ADSK.XYZ.BasisX;
+            if (curve != null && curve is ADSK.Line)
+            {
+                dir = curve.ComputeDerivatives(0, true).BasisX.Normalize();
+            }
+            else
+            {
+                dir = (curve.GetEndPoint(1) - curve.GetEndPoint(0)).Normalize();
+            }
+
+            extDirection = ADSK.XYZ.BasisZ.CrossProduct(dir);
+
+            if (wall.Flipped)
+            {
+                extDirection = -extDirection;
+            }
+
+            return extDirection;
+        }
     }
 }

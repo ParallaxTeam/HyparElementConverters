@@ -20,19 +20,13 @@ namespace HyparRevitCurtainWallConverter
 
         public ADSK.FilteredElementCollector AddElementFilters(ADSK.FilteredElementCollector collector)
         {
-            //pre-collect curtain walls by seeing if they have a curtain grid. also exclude in-place families.
-            var curtainWallIds = collector.OfCategory(ADSK.BuiltInCategory.OST_Walls).WhereElementIsNotElementType().WherePasses(new ADSK.ElementClassFilter(typeof(ADSK.Wall))).Cast<ADSK.Wall>().Where(w => w.CurtainGrid != null).Select(w => w.Id).ToArray();
-
-            //generate a revit filter based on those ids
-            ADSK.ElementFilter curtainWallIdFilter = new ADSK.ElementIdSetFilter(curtainWallIds);
-
             //collect the curtain walls using the filter
-            return collector.OfCategory(ADSK.BuiltInCategory.OST_Walls).WherePasses(curtainWallIdFilter);
+            return collector.OfCategory(ADSK.BuiltInCategory.OST_Walls);
         }
 
         public Element[] FromRevit(ADSK.Element revitElement, ADSK.Document document)
         {
-
+            if (((ADSK.Wall)revitElement).WallType.Kind != ADSK.WallKind.Curtain) return null;
             return Create.MakeHyparCurtainWallFromRevitCurtainWall(revitElement, document).ToArray();
         }
 
