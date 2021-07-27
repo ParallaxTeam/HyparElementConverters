@@ -26,6 +26,8 @@ OutputDir=.
 OutputBaseFilename=HYPAR-CustomRevitConverters.v{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
+PrivilegesRequired=lowest
+UninstallFilesDir="{userpf}\Hypar\uninstall\revit-addin\uninstall"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -37,10 +39,10 @@ Name: beamConverter; Description: Hypar Beam Converter;  Types: full
 
 [Files]
 ; Curtain Wall Converter Option
-Source: "C:\Users\johnpierson\Documents\Repos\HyparElementConverters\src\CurtainWall\HyparRevitCurtainWallConverter\bin\Debug\HyparRevitCurtainWallConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: curtainWallConverter 
+Source: "..\src\CurtainWall\HyparRevitCurtainWallConverter\bin\Debug\HyparRevitCurtainWallConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: curtainWallConverter
 
 ; Roof Converter Option
-Source: "C:\Users\johnpierson\Documents\Repos\HyparElementConverters\src\Roof\HyparRevitRoofConverter\bin\Debug\HyparRevitRoofConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: roofConverter 
+Source: "..\src\Roof\HyparRevitRoofConverter\bin\Debug\HyparRevitRoofConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: roofConverter
 
 ; Roof Converter Option
-Source: "C:\Users\johnpierson\Documents\Repos\HyparElementConverters\src\Beam\HyparRevitBeamConverter\bin\Debug\HyparRevitBeamConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: beamConverter
+Source: "..\src\Beam\HyparRevitBeamConverter\bin\Debug\HyparRevitBeamConverter.dll"; DestDir: "{#HyparConverterFolder}"; Flags: ignoreversion; Components: beamConverter
