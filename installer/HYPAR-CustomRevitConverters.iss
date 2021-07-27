@@ -27,7 +27,7 @@ OutputBaseFilename=HYPAR-CustomRevitConverters.v{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
-UninstallFilesDir="{userpf}\Hypar\uninstall\revit-addin\uninstall"
+UninstallFilesDir="{userpf}\Hypar\uninstall\paralax-hypar-revit-converters\uninstall"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
