@@ -1,5 +1,5 @@
 #define MyAppName "HYPAR Converters by Parallax Team"
-#define MyAppVersion "2021.2.2"
+#define MyAppVersion "2021.7.1"
 #define MyAppPublisher "ParallaxTeam"
 #define MyAppURL "https://github.com/ParallaxTeam/HyparElementConverters"
 
@@ -9,6 +9,7 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
+; SignTool=prlxsign
 AppId={{18EBB6B9-C5AF-4AB5-849B-8A0620F09D8E}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -21,7 +22,7 @@ DefaultDirName={pf}\{#MyAppName}
 DisableDirPage=yes
 DefaultGroupName=Parallax Team, Inc\{#MyAppName}
 DisableProgramGroupPage=yes
-LicenseFile=C:\Users\johnpierson\Documents\Repos\HyparElementConverters\LICENSE
+LicenseFile=..\LICENSE
 OutputDir=.
 OutputBaseFilename=HYPAR-CustomRevitConverters.v{#MyAppVersion}
 Compression=lzma
