@@ -152,13 +152,28 @@ namespace HyparRevitRoofConverter
             var roofType = roof.RoofType;
             var allLayers = roofType.GetCompoundStructure().GetLayers();
 
-            ADSK.Material topLayerMaterial = doc.GetElement(allLayers.First().MaterialId) as ADSK.Material;
-            ADSK.Material bottomLayerMaterial = doc.GetElement(allLayers.Last().MaterialId) as ADSK.Material;
+            Material topMaterial = BuiltInMaterials.Default;
+            Material bottomMaterial = BuiltInMaterials.Default;
+
+            if (allLayers.First().MaterialId != ADSK.ElementId.InvalidElementId)
+            {
+                ADSK.Material topLayerMaterial = doc.GetElement(allLayers.First().MaterialId) as ADSK.Material;
+                topMaterial = topLayerMaterial.ToElementsMaterial();
+            }
+
+            if (allLayers.Last().MaterialId != ADSK.ElementId.InvalidElementId)
+            {
+                ADSK.Material bottomLayerMaterial = doc.GetElement(allLayers.Last().MaterialId) as ADSK.Material;
+
+                bottomMaterial = bottomLayerMaterial.ToElementsMaterial();
+            }
+
+
 
             return new Dictionary<string, Material>()
             {
-                {"top", topLayerMaterial.ToElementsMaterial()},
-                {"bottom", bottomLayerMaterial.ToElementsMaterial()},
+                {"top", topMaterial},
+                {"bottom", bottomMaterial},
             };
         }
     }

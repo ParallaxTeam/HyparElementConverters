@@ -1,5 +1,5 @@
 #define MyAppName "HYPAR Converters by Parallax Team"
-#define MyAppVersion "2021.7.1"
+#define MyAppVersion "2021.8.1"
 #define MyAppPublisher "ParallaxTeam"
 #define MyAppURL "https://github.com/ParallaxTeam/HyparElementConverters"
 
@@ -18,7 +18,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={pf}\{#MyAppName}
+DefaultDirName= "{userpf}\HyparConvertersParallax"
 DisableDirPage=yes
 DefaultGroupName=Parallax Team, Inc\{#MyAppName}
 DisableProgramGroupPage=yes
@@ -28,7 +28,7 @@ OutputBaseFilename=HYPAR-CustomRevitConverters.v{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
-UninstallFilesDir="{userpf}\Hypar\uninstall\parallax-hypar-revit-converters\uninstall"
+;UninstallFilesDir="{userpf}\Hypar\uninstall\parallax-hypar-revit-converters\uninstall"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

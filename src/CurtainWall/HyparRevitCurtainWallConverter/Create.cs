@@ -14,7 +14,7 @@ namespace HyparRevitCurtainWallConverter
     public static class Create
     {
         private static ADSK.Document _doc;
-        private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1));
+        private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1),0.1d,0.1d,null,false,false,true,null,true, new Guid());
 
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
@@ -189,13 +189,16 @@ namespace HyparRevitCurtainWallConverter
                 var profile = revitMullion.GetMullionProfile();
 
                 var polyLine = new Polyline(curve.Tessellate().Select(p => p.ToVector3(true)).ToList());
+                
+                //var tForm = revitMullion.GetTransform().ToElementsTransform(true);
+                //var orig = tForm.YZ().Normal;
+                //tForm.Move(orig.X * -_currentWidth, orig.Y * -_currentWidth, orig.Z * -_currentWidth);
 
-                var tForm = revitMullion.GetTransform().ToElementsTransform(true);
-                var orig = tForm.YZ().Normal;
-                tForm.Move(orig.X * -_currentWidth, orig.Y * -_currentWidth, orig.Z * -_currentWidth);
+                //Beam mullion =
+                //    new Beam(polyLine, tForm.OfProfile(profile), DefaultMullionMaterial, 0, 0, dbl);
 
                 Beam mullion =
-                    new Beam(polyLine, tForm.OfProfile(profile), DefaultMullionMaterial, 0, 0, dbl);
+                    new Beam(polyLine, profile, DefaultMullionMaterial, 0, 0, dbl);
 
                 newElements.Add(mullion);
             }
