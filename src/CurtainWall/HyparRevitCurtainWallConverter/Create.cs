@@ -14,7 +14,7 @@ namespace HyparRevitCurtainWallConverter
     public static class Create
     {
         private static ADSK.Document _doc;
-        private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1),0.1d,0.1d,null,false,false,true,null,true, new Guid());
+        private static Elements.Material DefaultMullionMaterial => new Material("Aluminum", new Color(0.64f, 0.68f, 0.68f, 1),0.1d,0.1d,null,false,false,true,null,true, Guid.NewGuid());
 
         public static Element[] MakeHyparCurtainWallFromRevitCurtainWall(Autodesk.Revit.DB.Element revitElement, ADSK.Document doc)
         {
@@ -40,7 +40,7 @@ namespace HyparRevitCurtainWallConverter
             panelDictionary.TryGetValue("glazed", out var glazed);
 
             CurtainWallPanel curtainWallPanel =
-                new CurtainWallPanel(mullions, spandrel, glazed, null, null, null, false, new Guid(), "");
+                new CurtainWallPanel(mullions, spandrel, glazed, null, null, null, false, Guid.NewGuid(), "");
 
             newElements.Add(curtainWallPanel);
 
@@ -164,7 +164,7 @@ namespace HyparRevitCurtainWallConverter
                         existingSegment.GetEndPoint(1).ToVector3(true));
 
                     Beam mullion =
-                       new Beam(line, profile, DefaultMullionMaterial,0,0, dbl,null,false,new Guid(), direction);
+                       new Beam(line, profile, DefaultMullionMaterial,0,0, dbl,null,false,Guid.NewGuid(), direction);
 
                     newElements.Add(mullion);
                 }
